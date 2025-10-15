@@ -42,6 +42,28 @@
 
 开发服务器通过 Vite 代理把 `/api` 请求转发到后端，确保两个服务同时启动即可完成联调。
 
+## Docker 部署
+
+项目提供了基于 Docker 的一键启动方案：
+
+1. 确保已安装 Docker 与 Docker Compose。
+2. 在仓库根目录执行：
+   ```bash
+   docker compose build
+   docker compose up -d
+   ```
+3. 服务启动后：
+   - 后端 API 暴露在 `http://localhost:8080`
+   - 前端页面可通过 `http://localhost:5173` 访问
+
+默认使用 SQLite 存储，数据与上传的图片会持久化到 Compose 定义的卷 `backend-data` 与 `backend-uploads` 中。如需调整后端配置，可在 `docker-compose.yml` 的 `backend.environment` 中覆盖相应的环境变量（例如 `APP_AUTH_JWT_SECRET` 等）。
+
+停止并清理容器：
+
+```bash
+docker compose down
+```
+
 ## 核心功能
 - **用户管理**：注册、登录、个人信息查询。注册成功自动获取登录态（JWT）。
 - **点评提交**：上传食物名称、地址、描述、评分；支持追加图片，可配置本地文件或 S3/OSS/COS 等对象存储。
