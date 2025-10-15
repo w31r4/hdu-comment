@@ -1,0 +1,19 @@
+# Go build artifacts
+backend/bin/
+backend/data/
+backend/uploads/
+backend/coverage.out
+
+# Node/Vite artifacts
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Environment files
+.env
+backend/.env
+frontend/.env
