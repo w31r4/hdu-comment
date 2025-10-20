@@ -38,6 +38,11 @@ func Register(p Params) {
 
 	if p.StaticUploadDir != "" {
 		api.Static("/uploads", p.StaticUploadDir)
+
+		p.Engine.NoRoute(func(c *gin.Context) {
+			// For any unhandled API routes, return a standard JSON 404 error.
+			c.JSON(404, gin.H{"error": "not found"})
+		})
 	}
 
 	api.GET("/reviews", p.ReviewHandler.ListPublic)
