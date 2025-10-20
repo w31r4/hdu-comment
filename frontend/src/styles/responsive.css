@@ -1,0 +1,222 @@
+/* 移动端适配的完整媒体查询 */
+
+/* 超小屏幕 (手机) */
+@media (max-width: 480px) {
+    :root {
+        --spacing-md: 0.75rem;
+        --spacing-lg: 1rem;
+        --spacing-xl: 1.5rem;
+    }
+
+    .app-main {
+        padding: 12px 8px;
+    }
+
+    .home-container {
+        padding: 12px 8px;
+    }
+
+    .home-title {
+        font-size: 24px !important;
+    }
+
+    .home-subtitle {
+        font-size: 14px;
+    }
+
+    .review-card-image-container {
+        height: 140px;
+    }
+
+    .review-title {
+        font-size: 16px !important;
+    }
+
+    .review-description {
+        font-size: 14px;
+    }
+
+    .pagination-container {
+        margin-top: 24px;
+    }
+
+    .ant-pagination {
+        font-size: 12px;
+    }
+
+    .ant-pagination-item {
+        min-width: 28px;
+        height: 28px;
+        line-height: 26px;
+    }
+}
+
+/* 小屏幕 (平板竖屏) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .app-main {
+        padding: 16px 12px;
+    }
+
+    .home-container {
+        padding: 16px 12px;
+    }
+
+    .home-title {
+        font-size: 28px !important;
+    }
+
+    .review-card-image-container {
+        height: 160px;
+    }
+
+    .grid-cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* 中等屏幕 (平板横屏) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid-cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .review-card-image-container {
+        height: 180px;
+    }
+}
+
+/* 大屏幕 (桌面) */
+@media (min-width: 1025px) {
+    .grid-cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .review-card-image-container {
+        height: 200px;
+    }
+}
+
+/* 超大屏幕 */
+@media (min-width: 1440px) {
+    .app-main {
+        max-width: 1400px;
+    }
+
+    .grid-cols-5 {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+/* 横竖屏适配 */
+@media (orientation: landscape) and (max-width: 768px) {
+    .review-card-image-container {
+        height: 120px;
+    }
+
+    .home-search-section {
+        max-width: 400px;
+    }
+}
+
+/* 高DPI屏幕优化 */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+    .review-card-image {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* 暗色模式 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1e293b;
+        --bg-secondary: #0f172a;
+        --bg-tertiary: #334155;
+        --text-primary: #f8fafc;
+        --text-secondary: #e2e8f0;
+        --text-tertiary: #cbd5e1;
+        --border-color: #334155;
+    }
+
+    .app-container {
+        background-color: var(--bg-secondary);
+    }
+
+    header {
+        background: rgba(30, 41, 59, 0.95);
+        border-bottom-color: #334155;
+    }
+
+    .review-card {
+        background: var(--bg-primary);
+        border-color: var(--border-color);
+    }
+
+    .home-pagination {
+        background: var(--bg-primary);
+        border-color: var(--border-color);
+    }
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+    .review-card:hover {
+        transform: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .review-card-image:hover {
+        transform: none;
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+
+    /* 增大触摸目标 */
+    .ant-btn,
+    .ant-pagination-item,
+    .ant-select-selector {
+        min-height: 44px;
+    }
+
+    .ant-pagination-item {
+        min-width: 44px;
+        height: 44px;
+        line-height: 42px;
+    }
+}
+
+/* 键盘导航优化 */
+@media (prefers-reduced-motion: no-preference) {
+    :focus-visible {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+}
+
+/* 打印样式 */
+@media print {
+
+    .mobile-menu-btn,
+    .desktop-nav,
+    .pagination-container {
+        display: none !important;
+    }
+
+    .review-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+}

@@ -1,0 +1,274 @@
+/* 首页样式 */
+.home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+}
+
+.home-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.home-title {
+    margin-bottom: 8px !important;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.home-subtitle {
+    font-size: 18px;
+    color: #64748b;
+}
+
+.home-search-section {
+    max-width: 600px;
+    margin: 0 auto 48px;
+}
+
+.home-search-input {
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.home-filters {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.home-sort-select {
+    min-width: 120px;
+}
+
+.home-content {
+    min-height: 400px;
+}
+
+.reviews-grid {
+    margin-bottom: 48px;
+}
+
+.loading-container,
+.error-container,
+.empty-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 48px;
+}
+
+.home-pagination {
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+/* 点评卡片样式 */
+.review-card {
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.review-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.review-card-image-container {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.review-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.review-card:hover .review-card-image {
+    transform: scale(1.05);
+}
+
+.review-status-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+}
+
+.review-card-content {
+    padding: 16px;
+}
+
+.review-title {
+    margin-bottom: 8px !important;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.review-meta {
+    margin-bottom: 12px;
+}
+
+.review-rating {
+    font-size: 14px;
+}
+
+.rating-text {
+    margin-left: 8px;
+    font-weight: 600;
+    color: #f59e0b;
+}
+
+.review-description {
+    color: #475569;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.review-info {
+    margin-bottom: 16px;
+}
+
+.info-item {
+    font-size: 14px;
+}
+
+.info-icon {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.info-text {
+    font-size: 14px;
+}
+
+.review-tags {
+    margin-top: 12px;
+}
+
+.review-tag {
+    margin: 2px;
+    font-size: 12px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .home-container {
+        padding: 16px 12px;
+    }
+
+    .home-header {
+        margin-bottom: 32px;
+    }
+
+    .home-title {
+        font-size: 28px !important;
+    }
+
+    .home-subtitle {
+        font-size: 16px;
+    }
+
+    .home-search-section {
+        margin-bottom: 32px;
+    }
+
+    .reviews-grid {
+        margin-bottom: 32px;
+    }
+
+    .review-card-image-container {
+        height: 160px;
+    }
+
+    .review-title {
+        font-size: 16px !important;
+    }
+
+    .pagination-container {
+        margin-top: 32px;
+    }
+
+    .home-pagination {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .home-container {
+        padding: 12px 8px;
+    }
+
+    .home-title {
+        font-size: 24px !important;
+    }
+
+    .review-card-image-container {
+        height: 140px;
+    }
+
+    .review-card-content {
+        padding: 12px;
+    }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .home-pagination {
+        background: #1e293b;
+        color: #f8fafc;
+    }
+
+    .review-card {
+        background: #1e293b;
+        border-color: #334155;
+    }
+
+    .review-title {
+        color: #f8fafc;
+    }
+
+    .review-description {
+        color: #cbd5e1;
+    }
+}
+
+/* 加载动画 */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-card {
+    background: linear-gradient(90deg,
+            #f0f0f0 25%,
+            #e0e0e0 50%,
+            #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 12px;
+    height: 400px;
+}
