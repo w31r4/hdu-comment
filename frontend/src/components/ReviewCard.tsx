@@ -99,16 +99,18 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
                     className="review-description"
                     ellipsis={{ rows: 2 }}
                 >
-                    {review.description || '暂无详细点评'}
+                    {review.content || '暂无详细点评'}
                 </Paragraph>
 
                 <Space direction="vertical" size="small" className="review-info">
-                    <Space className="info-item">
-                        <EnvironmentOutlined className="info-icon" />
-                        <Text type="secondary" className="info-text">
-                            {review.address}
-                        </Text>
-                    </Space>
+                    {review.store && (
+                        <Space className="info-item">
+                            <EnvironmentOutlined className="info-icon" />
+                            <Text type="secondary" className="info-text">
+                                {review.store.name} - {review.store.address}
+                            </Text>
+                        </Space>
+                    )}
 
                     <Space className="info-item">
                         <UserOutlined className="info-icon" />

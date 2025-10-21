@@ -13,13 +13,16 @@ import (
 
 // Params groups dependencies required for routing.
 type Params struct {
-	Engine          *gin.Engine
-	AuthMiddleware  *middleware.AuthMiddleware
-	AuthHandler     *handlers.AuthHandler
-	UserHandler     *handlers.UserHandler
-	ReviewHandler   *handlers.ReviewHandler
-	AdminHandler    *adminHandlers.ReviewAdminHandler
-	StaticUploadDir string
+	Engine             *gin.Engine
+	AuthMiddleware     *middleware.AuthMiddleware
+	AuthHandler        *handlers.AuthHandler
+	UserHandler        *handlers.UserHandler
+	ReviewHandler      *handlers.ReviewHandler
+	StoreHandler       *handlers.StoreHandler
+	ReviewStoreHandler *handlers.ReviewStoreHandler
+	AdminHandler       *adminHandlers.ReviewAdminHandler
+	StoreAdminHandler  *adminHandlers.StoreAdminHandler
+	StaticUploadDir    string
 }
 
 // Register configures API routes on the provided engine.
@@ -59,12 +62,38 @@ func Register(p Params) {
 		protected.POST("/reviews/:id/images", p.ReviewHandler.UploadImage)
 	}
 
+	// 店铺相关接口（公开）
+	stores := api.Group("/stores")
+	{
+		stores.GET("", p.StoreHandler.SearchStores)
+		stores.GET("/:id", p.StoreHandler.GetStore)
+	}
+
+	// 店铺相关接口（需要认证）
+	protectedStores := api.Group("")
+	protectedStores.Use(p.AuthMiddleware.RequireAuth())
+	{
+		protectedStores.GET("/stores/:id/my-review", p.StoreHandler.GetMyReview)
+		protectedStores.POST("/stores/with-review", p.StoreHandler.CreateStoreWithReview)
+		protectedStores.POST("/reviews/store", p.ReviewStoreHandler.SubmitReview)
+		protectedStores.PUT("/reviews/store/:id", p.ReviewStoreHandler.UpdateReview)
+		protectedStores.GET("/stores/:id/reviews", p.ReviewStoreHandler.GetStoreReviews)
+	}
+
+	// 管理员接口
 	admin := api.Group("/admin")
 	admin.Use(p.AuthMiddleware.RequireAuth(), p.AuthMiddleware.RequireRoles("admin"))
 	{
+		// 评价管理
 		admin.GET("/reviews/pending", p.AdminHandler.Pending)
 		admin.PUT("/reviews/:id/approve", p.AdminHandler.Approve)
 		admin.PUT("/reviews/:id/reject", p.AdminHandler.Reject)
 		admin.DELETE("/reviews/:id", p.AdminHandler.Delete)
+
+		// 店铺管理
+		admin.GET("/stores/pending", p.StoreAdminHandler.Pending)
+		admin.PUT("/stores/:id/approve", p.StoreAdminHandler.Approve)
+		admin.PUT("/stores/:id/reject", p.StoreAdminHandler.Reject)
+		admin.DELETE("/stores/:id", p.StoreAdminHandler.Delete)
 	}
 }

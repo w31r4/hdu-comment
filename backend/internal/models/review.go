@@ -7,17 +7,18 @@ import (
 	"gorm.io/gorm"
 )
 
-// Review represents a food review submitted by a user.
+// Review represents a food review submitted by a user for a specific store.
 type Review struct {
 	ID              uuid.UUID     `gorm:"type:char(36);primaryKey" json:"id"`
+	StoreID         uuid.UUID     `gorm:"type:char(36);not null;index" json:"store_id"`
+	Store           Store         `gorm:"foreignKey:StoreID" json:"store"`
+	AuthorID        uuid.UUID     `gorm:"type:char(36);not null;index:idx_user_store,unique" json:"author_id"`
+	Author          User          `gorm:"foreignKey:AuthorID" json:"author"`
 	Title           string        `gorm:"size:120;not null" json:"title"`
-	Address         string        `gorm:"size:255;not null" json:"address"`
-	Description     string        `gorm:"type:text" json:"description"`
+	Content         string        `gorm:"type:text;not null" json:"content"`
 	Rating          float32       `gorm:"type:decimal(2,1);not null" json:"rating"`
 	Status          ReviewStatus  `gorm:"size:20;default:pending" json:"status"`
 	RejectionReason string        `gorm:"type:text" json:"rejection_reason"`
-	AuthorID        uuid.UUID     `gorm:"type:char(36);not null" json:"author_id"`
-	Author          User          `gorm:"foreignKey:AuthorID" json:"author"`
 	Images          []ReviewImage `gorm:"foreignKey:ReviewID" json:"images"`
 	CreatedAt       time.Time     `json:"created_at"`
 	UpdatedAt       time.Time     `json:"updated_at"`

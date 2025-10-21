@@ -52,6 +52,7 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
+	storeRepo := repository.NewStoreRepository(db)
 	refreshRepo := repository.NewRefreshTokenRepository(db)
 
 	storageProvider, err := storage.New(cfg)
@@ -63,11 +64,15 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, jwtManager, refreshRepo, cfg.Auth.RefreshTokenTTL)
 	reviewService := services.NewReviewService(reviewRepo, storageProvider)
+	storeService := services.NewStoreService(storeRepo, reviewRepo, db)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	reviewHandler := handlers.NewReviewHandler(reviewService)
+	storeHandler := handlers.NewStoreHandler(storeService)
+	reviewStoreHandler := handlers.NewReviewStoreHandler(storeService, reviewService)
 	adminReviewHandler := adminHandlers.NewReviewAdminHandler(reviewService)
+	storeAdminHandler := adminHandlers.NewStoreAdminHandler(storeService)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
@@ -86,13 +91,16 @@ func main() {
 	}
 
 	router.Register(router.Params{
-		Engine:          engine,
-		AuthMiddleware:  authMiddleware,
-		AuthHandler:     authHandler,
-		UserHandler:     userHandler,
-		ReviewHandler:   reviewHandler,
-		AdminHandler:    adminReviewHandler,
-		StaticUploadDir: staticUploads,
+		Engine:             engine,
+		AuthMiddleware:     authMiddleware,
+		AuthHandler:        authHandler,
+		UserHandler:        userHandler,
+		ReviewHandler:      reviewHandler,
+		StoreHandler:       storeHandler,
+		ReviewStoreHandler: reviewStoreHandler,
+		AdminHandler:       adminReviewHandler,
+		StoreAdminHandler:  storeAdminHandler,
+		StaticUploadDir:    staticUploads,
 	})
 
 	if err := engine.Run(":" + cfg.Server.Port); err != nil {

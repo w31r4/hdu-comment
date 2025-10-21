@@ -58,7 +58,6 @@ func (h *ReviewHandler) Submit(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
 	var req struct {
 		Title       string  `json:"title"`
-		Address     string  `json:"address"`
 		Description string  `json:"description"`
 		Rating      float32 `json:"rating"`
 	}
@@ -68,9 +67,11 @@ func (h *ReviewHandler) Submit(c *gin.Context) {
 		return
 	}
 
-	review, err := h.reviews.Submit(userID, services.CreateReviewInput{
+	// TODO: 临时使用固定的storeID，后续需要从前端获取实际的storeID
+	tempStoreID := uuid.MustParse("00000000-0000-0000-0000-000000000001") // 临时storeID
+	
+	review, err := h.reviews.Submit(userID, tempStoreID, services.CreateReviewInput{
 		Title:       req.Title,
-		Address:     req.Address,
 		Description: req.Description,
 		Rating:      req.Rating,
 	})

@@ -5,6 +5,7 @@ import NewHome from './pages/NewHome';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SubmitReview from './pages/SubmitReview';
+import SubmitStoreReview from './pages/SubmitStoreReview';
 import MyReviews from './pages/MyReviews';
 import ReviewDetail from './pages/ReviewDetail';
 import AdminPending from './pages/AdminPending';
@@ -27,6 +28,7 @@ const App = () => {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/submit" element={<SubmitReview />} />
+            <Route path="/submit-store" element={<SubmitStoreReview />} />
             <Route path="/my" element={<MyReviews />} />
           </Route>
 

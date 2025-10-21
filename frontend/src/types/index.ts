@@ -6,6 +6,22 @@ export interface User {
   created_at?: string;
 }
 
+export interface Store {
+  id: string;
+  name: string;
+  address: string;
+  phone?: string;
+  category?: string;
+  description?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
+  average_rating: number;
+  total_reviews: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ReviewImage {
   id: string;
   review_id: string;
@@ -16,9 +32,10 @@ export interface ReviewImage {
 
 export interface Review {
   id: string;
+  store_id: string;
+  store?: Store;
   title: string;
-  address: string;
-  description: string;
+  content: string;
   rating: number;
   status: 'pending' | 'approved' | 'rejected';
   rejection_reason?: string;

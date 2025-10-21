@@ -11,7 +11,8 @@ import {
     AuditOutlined,
     CalendarOutlined,
     StarOutlined,
-    HomeOutlined
+    HomeOutlined,
+    ShopOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../hooks/useAuth';
 import type { MenuProps } from 'antd';
@@ -44,6 +45,11 @@ const AppHeader = () => {
     if (user) {
         menuItems.push(
             {
+                key: '/submit-store',
+                label: <Link to="/submit-store">店铺评价</Link>,
+                icon: <ShopOutlined />
+            },
+            {
                 key: '/submit',
                 label: <Link to="/submit">提交点评</Link>,
                 icon: <PlusOutlined />
@@ -66,11 +72,13 @@ const AppHeader = () => {
 
     const selectedKey = location.pathname.startsWith('/admin')
         ? '/admin/reviews'
-        : location.pathname.startsWith('/submit')
-            ? '/submit'
-            : location.pathname.startsWith('/my')
-                ? '/my'
-                : '/';
+        : location.pathname.startsWith('/submit-store')
+            ? '/submit-store'
+            : location.pathname.startsWith('/submit')
+                ? '/submit'
+                : location.pathname.startsWith('/my')
+                    ? '/my'
+                    : '/';
 
     const userMenuItems: MenuProps['items'] = [
         {

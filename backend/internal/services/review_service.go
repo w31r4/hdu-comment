@@ -29,7 +29,6 @@ func NewReviewService(reviews *repository.ReviewRepository, fileStorage storage.
 // CreateReviewInput bundles parameters for a new review.
 type CreateReviewInput struct {
 	Title       string
-	Address     string
 	Description string
 	Rating      float32
 }
@@ -57,27 +56,26 @@ type ReviewListResult struct {
 	Pagination Pagination      `json:"pagination"`
 }
 
-// Submit creates a new review in pending state.
-func (s *ReviewService) Submit(authorID uuid.UUID, input CreateReviewInput) (*models.Review, error) {
+// Submit creates a new review in pending state for a specific store.
+func (s *ReviewService) Submit(authorID uuid.UUID, storeID uuid.UUID, input CreateReviewInput) (*models.Review, error) {
 	title := strings.TrimSpace(input.Title)
-	address := strings.TrimSpace(input.Address)
-	description := strings.TrimSpace(input.Description)
+	content := strings.TrimSpace(input.Description)
 
-	if title == "" || address == "" {
-		return nil, errors.New("title and address are required")
+	if title == "" {
+		return nil, errors.New("title is required")
 	}
 	if input.Rating < 0 || input.Rating > 5 {
 		return nil, errors.New("rating must be between 0 and 5")
 	}
 
 	review := &models.Review{
-		ID:          uuid.New(),
-		Title:       title,
-		Address:     address,
-		Description: description,
-		Rating:      input.Rating,
-		Status:      models.ReviewStatusPending,
-		AuthorID:    authorID,
+		ID:       uuid.New(),
+		StoreID:  storeID,
+		Title:    title,
+		Content:  content,
+		Rating:   input.Rating,
+		Status:   models.ReviewStatusPending,
+		AuthorID: authorID,
 	}
 
 	if err := s.reviews.Create(review); err != nil {
@@ -158,6 +156,11 @@ func (s *ReviewService) listWithPagination(opts repository.ListOptions, filters 
 // Get returns a review by ID.
 func (s *ReviewService) Get(id uuid.UUID) (*models.Review, error) {
 	return s.reviews.FindByID(id)
+}
+
+// Update updates an existing review.
+func (s *ReviewService) Update(review *models.Review) error {
+	return s.reviews.Update(review)
 }
 
 // Approve marks a review as approved.
