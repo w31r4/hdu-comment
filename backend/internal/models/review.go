@@ -10,7 +10,7 @@ import (
 // Review represents a food review submitted by a user for a specific store.
 type Review struct {
 	ID              uuid.UUID     `gorm:"type:char(36);primaryKey" json:"id"`
-	StoreID         uuid.UUID     `gorm:"type:char(36);not null;index" json:"store_id"`
+	StoreID         uuid.UUID     `gorm:"type:char(36);not null;index:idx_user_store,unique" json:"store_id"`
 	Store           Store         `gorm:"foreignKey:StoreID" json:"store"`
 	AuthorID        uuid.UUID     `gorm:"type:char(36);not null;index:idx_user_store,unique" json:"author_id"`
 	Author          User          `gorm:"foreignKey:AuthorID" json:"author"`

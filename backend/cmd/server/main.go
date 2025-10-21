@@ -71,7 +71,7 @@ func main() {
 	reviewHandler := handlers.NewReviewHandler(reviewService)
 	storeHandler := handlers.NewStoreHandler(storeService)
 	reviewStoreHandler := handlers.NewReviewStoreHandler(storeService, reviewService)
-	adminReviewHandler := adminHandlers.NewReviewAdminHandler(reviewService)
+	adminReviewHandler := adminHandlers.NewReviewAdminHandler(reviewService, storeService)
 	storeAdminHandler := adminHandlers.NewStoreAdminHandler(storeService)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)

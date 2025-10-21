@@ -48,13 +48,13 @@ func Load() (*Config, error) {
 	v.SetEnvPrefix("APP")
 	v.AutomaticEnv()
 
-	v.SetDefault("SERVER_PORT", "8080")
+	v.SetDefault("SERVER_PORT", "8081")
 	v.SetDefault("SERVER_MODE", "release")
 
 	v.SetDefault("DATABASE_DRIVER", "sqlite")
 	v.SetDefault("DATABASE_DSN", "file:data/app.db?_fk=1&mode=rwc")
 
-	v.SetDefault("AUTH_ACCESS_TOKEN_TTL", "15m")
+	v.SetDefault("AUTH_ACCESS_TOKEN_TTL", "72h")
 	v.SetDefault("AUTH_REFRESH_TOKEN_TTL", "168h")
 
 	v.SetDefault("STORAGE_PROVIDER", "local")
@@ -68,6 +68,9 @@ func Load() (*Config, error) {
 	v.SetDefault("STORAGE_S3_SECRET_KEY", "")
 	v.SetDefault("STORAGE_S3_USE_SSL", true)
 	v.SetDefault("STORAGE_S3_BASE_URL", "")
+
+	v.SetDefault("ADMIN_EMAIL", "admin@example.com")
+	v.SetDefault("ADMIN_PASSWORD", "adminpassword")
 
 	accessTTL, err := time.ParseDuration(v.GetString("AUTH_ACCESS_TOKEN_TTL"))
 	if err != nil {

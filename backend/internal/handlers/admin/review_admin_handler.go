@@ -13,11 +13,12 @@ import (
 // ReviewAdminHandler contains endpoints reserved for administrators.
 type ReviewAdminHandler struct {
 	reviews *services.ReviewService
+	stores  *services.StoreService
 }
 
 // NewReviewAdminHandler constructs a new handler.
-func NewReviewAdminHandler(reviews *services.ReviewService) *ReviewAdminHandler {
-	return &ReviewAdminHandler{reviews: reviews}
+func NewReviewAdminHandler(reviews *services.ReviewService, stores *services.StoreService) *ReviewAdminHandler {
+	return &ReviewAdminHandler{reviews: reviews, stores: stores}
 }
 
 // @Summary      待审核点评列表
@@ -76,6 +77,12 @@ func (h *ReviewAdminHandler) Approve(c *gin.Context) {
 	if err := h.reviews.Approve(review); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// 触发店铺平均分更新
+	if err := h.stores.UpdateStoreRating(c.Request.Context(), review.StoreID); err != nil {
+		// 即使更新失败，也只记录日志，不阻塞主流程
+		// log.Printf("failed to update store rating for store %s: %v", review.StoreID, err)
 	}
 
 	c.JSON(http.StatusOK, review)
