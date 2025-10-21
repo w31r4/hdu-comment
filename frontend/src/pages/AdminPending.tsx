@@ -75,7 +75,7 @@ const AdminPending = () => {
 
   const handleDelete = (review: Review) => {
     Modal.confirm({
-      title: `删除点评：${review.title}`,
+      title: `删除点评：${review.store?.name}`,
       content: '删除后不可恢复，确认继续吗？',
       okText: '确认删除',
       okButtonProps: { danger: true },
@@ -112,13 +112,13 @@ const AdminPending = () => {
   const columns: ColumnsType<Review> = [
     {
       title: '菜品/店铺',
-      dataIndex: 'title',
-      key: 'title'
+      dataIndex: ['store', 'name'],
+      key: 'store_name'
     },
     {
       title: '地址',
-      dataIndex: 'address',
-      key: 'address'
+      dataIndex: ['store', 'address'],
+      key: 'store_address'
     },
     {
       title: '评分',
@@ -184,7 +184,7 @@ const AdminPending = () => {
 
       <Modal
         open={rejectModalOpen}
-        title={`驳回点评：${selectedReview?.title ?? ''}`}
+        title={`驳回点评：${selectedReview?.store?.name ?? ''}`}
         onCancel={() => setRejectModalOpen(false)}
         onOk={handleReject}
         okText="确认驳回"
@@ -202,7 +202,7 @@ const AdminPending = () => {
 
       <Modal
         open={detailOpen}
-        title={detailReview?.title ?? '点评详情'}
+        title={detailReview?.store?.name ?? '点评详情'}
         onCancel={() => {
           setDetailOpen(false);
           setDetailReview(null);
@@ -217,13 +217,13 @@ const AdminPending = () => {
         ) : (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Descriptions bordered column={1}>
-              <Descriptions.Item label="地址">{detailReview.address}</Descriptions.Item>
+              <Descriptions.Item label="地址">{detailReview.store?.address}</Descriptions.Item>
               <Descriptions.Item label="评分">{detailReview.rating.toFixed(1)} 分</Descriptions.Item>
               <Descriptions.Item label="提交时间">
                 {new Date(detailReview.created_at).toLocaleString()}
               </Descriptions.Item>
               <Descriptions.Item label="点评内容">
-                {detailReview.description || '暂无详细描述'}
+                {detailReview.content || '暂无详细描述'}
               </Descriptions.Item>
               {detailReview.rejection_reason && (
                 <Descriptions.Item label="驳回原因">

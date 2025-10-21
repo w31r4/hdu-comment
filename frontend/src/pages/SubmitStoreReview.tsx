@@ -5,7 +5,7 @@ import StoreSearch from '../components/StoreSearch';
 import StoreCreateForm from '../components/StoreCreateForm';
 import ReviewForm from '../components/ReviewForm';
 import { Rate } from 'antd';
-import { useAuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import type { Store } from '../types';
 import { submitStoreReview, updateStoreReview, getMyStoreReview } from '../api/store_client';
 
@@ -13,7 +13,6 @@ const { Title, Text } = Typography;
 const { Step } = Steps;
 
 interface ReviewFormData {
-  title: string;
   content: string;
   rating: number;
 }
@@ -23,7 +22,7 @@ const SubmitStoreReview = () => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [existingReview, setExistingReview] = useState<any>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { token } = useAuthContext();
+  const { token } = useAuth();
 
   const steps = [
     {
@@ -80,14 +79,13 @@ const SubmitStoreReview = () => {
     try {
       if (existingReview) {
         // 更新现有评价
-        const updatedReview = await updateStoreReview(existingReview.id, formData, token);
+        const updatedReview = await updateStoreReview(existingReview.id, { content: formData.content, rating: formData.rating }, token);
         setExistingReview(updatedReview);
         message.success('评价更新成功，等待管理员审核');
       } else {
         // 提交新评价
         const newReview = await submitStoreReview({
           store_id: selectedStore.id,
-          title: formData.title,
           content: formData.content,
           rating: formData.rating
         }, token);

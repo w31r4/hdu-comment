@@ -33,8 +33,8 @@ const MyReviews = () => {
   const columns: ColumnsType<Review> = [
     {
       title: '菜品/店铺',
-      dataIndex: 'title',
-      key: 'title'
+      dataIndex: ['store', 'name'],
+      key: 'store_name'
     },
     {
       title: '状态',

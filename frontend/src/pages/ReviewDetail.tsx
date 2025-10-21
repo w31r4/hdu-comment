@@ -49,15 +49,15 @@ const ReviewDetail = () => {
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Typography.Title level={3} style={{ margin: 0 }}>
-            {review.title}
+            {review.store?.name}
           </Typography.Title>
           <Tag color={statusMap[review.status].color}>{statusMap[review.status].text}</Tag>
         </div>
         <Descriptions column={1} bordered>
-          <Descriptions.Item label="地址">{review.address}</Descriptions.Item>
+          <Descriptions.Item label="地址">{review.store?.address}</Descriptions.Item>
           <Descriptions.Item label="评分">{review.rating.toFixed(1)} 分</Descriptions.Item>
           <Descriptions.Item label="点评">
-            {review.description || '暂无详细描述'}
+            {review.content || '暂无详细描述'}
           </Descriptions.Item>
           {review.status === 'rejected' && review.rejection_reason && (
             <Descriptions.Item label="驳回原因">
@@ -71,7 +71,7 @@ const ReviewDetail = () => {
               <Image
                 key={image.id}
                 src={image.url}
-                alt={review.title}
+                alt={review.store?.name}
                 width={240}
                 height={180}
                 style={{ objectFit: 'cover' }}

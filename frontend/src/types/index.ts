@@ -34,7 +34,6 @@ export interface Review {
   id: string;
   store_id: string;
   store?: Store;
-  title: string;
   content: string;
   rating: number;
   status: 'pending' | 'approved' | 'rejected';

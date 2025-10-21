@@ -46,7 +46,7 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
                 review.images && review.images.length > 0 && (
                     <div className="review-card-image-container">
                         <img
-                            alt={review.title}
+                            alt={review.store?.name}
                             src={review.images[0].url}
                             className="review-card-image"
                         />
@@ -81,7 +81,7 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
         >
             <div className="review-card-content">
                 <Title level={4} className="review-title" ellipsis={{ rows: 1 }}>
-                    {review.title}
+                    {review.store?.name}
                 </Title>
 
                 <Space className="review-meta" size="small">

@@ -24,13 +24,11 @@ export interface CreateStoreWithReviewInput {
 
 export interface SubmitReviewInput {
   store_id: string;
-  title: string;
   content: string;
   rating: number;
 }
 
 export interface UpdateReviewInput {
-  title: string;
   content: string;
   rating: number;
 }

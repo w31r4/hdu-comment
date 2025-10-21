@@ -7,7 +7,7 @@ const { TextArea } = Input;
 
 interface ReviewFormProps {
   existingReview?: Review | null;
-  onSubmit: (data: { title: string; content: string; rating: number }) => void;
+  onSubmit: (data: { content: string; rating: number }) => void;
   onCancel?: () => void;
 }
 
@@ -20,7 +20,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
     
     try {
       await onSubmit({
-        title: values.title,
         content: values.content,
         rating: values.rating
       });
@@ -32,7 +31,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
   };
 
   const initialValues = existingReview ? {
-    title: existingReview.title,
     content: existingReview.content,
     rating: existingReview.rating
   } : {
@@ -56,17 +54,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
           </div>
         )}
         
-        <Form.Item
-          label="评价标题"
-          name="title"
-          rules={[{ required: true, message: '请输入评价标题' }]}
-        >
-          <Input 
-            placeholder="给您的评价起个标题" 
-            maxLength={120}
-            showCount
-          />
-        </Form.Item>
         
         <Form.Item
           label="评价内容"

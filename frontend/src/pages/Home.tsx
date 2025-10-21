@@ -46,7 +46,7 @@ const Home = () => {
 
   const handleDelete = (review: Review) => {
     Modal.confirm({
-      title: `删除点评：${review.title}`,
+      title: `删除点评：${review.store?.name}`,
       content: '删除后不可恢复，确认继续吗？',
       okText: '确认删除',
       okButtonProps: { danger: true },
@@ -123,16 +123,16 @@ const Home = () => {
           renderItem={(review) => (
             <List.Item key={review.id}>
               <Card
-                title={review.title}
+                title={review.store?.name}
                 extra={<Text strong>{review.rating.toFixed(1)} 分</Text>}
                 hoverable
               >
-                <Paragraph ellipsis={{ rows: 3 }}>{review.description || '暂无详细点评'}</Paragraph>
-                <Paragraph type="secondary">地址：{review.address}</Paragraph>
+                <Paragraph ellipsis={{ rows: 3 }}>{review.content || '暂无详细点评'}</Paragraph>
+                <Paragraph type="secondary">地址：{review.store?.address}</Paragraph>
                 {review.images && review.images.length > 0 && (
                   <img
                     src={review.images[0].url}
-                    alt={review.title}
+                    alt={review.store?.name}
                     style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }}
                   />
                 )}
