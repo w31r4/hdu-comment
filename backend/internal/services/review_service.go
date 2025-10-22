@@ -40,6 +40,7 @@ type ListFilters struct {
 	Query    string
 	SortBy   string
 	SortDir  string
+	StoreID  *uuid.UUID
 }
 
 // Pagination metadata for list responses.
@@ -88,6 +89,7 @@ func (s *ReviewService) Submit(authorID uuid.UUID, storeID uuid.UUID, input Crea
 func (s *ReviewService) ListPublic(filters ListFilters) (ReviewListResult, error) {
 	opts := buildListOptions(filters)
 	opts.Statuses = []models.ReviewStatus{models.ReviewStatusApproved}
+	opts.StoreID = filters.StoreID
 	return s.listWithPagination(opts, filters)
 }
 

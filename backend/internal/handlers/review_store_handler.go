@@ -190,10 +190,9 @@ func (h *ReviewStoreHandler) GetStoreReviews(c *gin.Context) {
 		PageSize: pageSize,
 		SortBy:   "created_at",
 		SortDir:  "desc",
+		StoreID:  &storeID,
 	}
 
-	// TODO: 需要修改 ReviewService 支持按 storeID 筛选
-	// 暂时使用现有的 ListPublic，后续需要添加 StoreID 参数
 	result, err := h.reviews.ListPublic(filters)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

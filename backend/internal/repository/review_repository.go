@@ -23,6 +23,7 @@ func NewReviewRepository(db *gorm.DB) *ReviewRepository {
 type ListOptions struct {
 	Statuses []models.ReviewStatus
 	AuthorID *uuid.UUID
+	StoreID  *uuid.UUID
 	Query    string
 	SortBy   string
 	SortDir  string
@@ -45,6 +46,9 @@ func (r *ReviewRepository) List(opts ListOptions) (ListResult, error) {
 	}
 	if opts.AuthorID != nil {
 		base = base.Where("author_id = ?", opts.AuthorID)
+	}
+	if opts.StoreID != nil {
+		base = base.Where("store_id = ?", opts.StoreID)
 	}
 	if opts.Query != "" {
 		like := fmt.Sprintf("%%%s%%", opts.Query)
