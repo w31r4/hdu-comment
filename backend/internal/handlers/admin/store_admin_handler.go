@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/services"
 )
 
@@ -142,4 +143,37 @@ func (h *StoreAdminHandler) Delete(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// @Summary      创建新店铺
+// @Description  管理员直接创建一个已审核通过的店铺。
+// @Tags         管理员 - 店铺
+// @Accept       json
+// @Produce      json
+// @Param        body body dto.CreateStoreRequest true "店铺信息"
+// @Success      201 {object} dto.StoreResponse "创建成功"
+// @Failure      400 {object} object{error=string} "请求参数错误"
+// @Failure      409 {object} object{error=string} "店铺已存在"
+// @Security     ApiKeyAuth
+// @Router       /admin/stores [post]
+func (h *StoreAdminHandler) CreateStore(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+
+	var req dto.CreateStoreRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		return
+	}
+
+	store, err := h.stores.CreateStore(c.Request.Context(), userID, true, req)
+	if err != nil {
+		if err.Error() == "store already exists" {
+			c.JSON(http.StatusConflict, gin.H{"error": "该店铺已存在"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.ToStoreResponse(store))
 }

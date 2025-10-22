@@ -63,14 +63,13 @@ func main() {
 	jwtManager := auth.NewJWTManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL)
 
 	authService := services.NewAuthService(userRepo, jwtManager, refreshRepo, cfg.Auth.RefreshTokenTTL)
-	reviewService := services.NewReviewService(reviewRepo, storageProvider)
+	reviewService := services.NewReviewService(reviewRepo, storageProvider, db)
 	storeService := services.NewStoreService(storeRepo, reviewRepo, db)
 
 	authHandler := handlers.NewAuthHandler(authService)
 	userHandler := handlers.NewUserHandler(userRepo)
 	reviewHandler := handlers.NewReviewHandler(reviewService)
-	storeHandler := handlers.NewStoreHandler(storeService)
-	reviewStoreHandler := handlers.NewReviewStoreHandler(storeService, reviewService)
+	storeHandler := handlers.NewStoreHandler(storeService, reviewService)
 	adminReviewHandler := adminHandlers.NewReviewAdminHandler(reviewService, storeService)
 	storeAdminHandler := adminHandlers.NewStoreAdminHandler(storeService)
 
@@ -95,12 +94,11 @@ func main() {
 		AuthMiddleware:     authMiddleware,
 		AuthHandler:        authHandler,
 		UserHandler:        userHandler,
-		ReviewHandler:      reviewHandler,
-		StoreHandler:       storeHandler,
-		ReviewStoreHandler: reviewStoreHandler,
-		AdminHandler:       adminReviewHandler,
-		StoreAdminHandler:  storeAdminHandler,
-		StaticUploadDir:    staticUploads,
+		ReviewHandler:     reviewHandler,
+		StoreHandler:      storeHandler,
+		AdminHandler:      adminReviewHandler,
+		StoreAdminHandler: storeAdminHandler,
+		StaticUploadDir:   staticUploads,
 	})
 
 	if err := engine.Run(":" + cfg.Server.Port); err != nil {

@@ -18,3 +18,4 @@ frontend/dist/
 backend/.env
 frontend/.env
 *.png
+backend_api_analysis.md

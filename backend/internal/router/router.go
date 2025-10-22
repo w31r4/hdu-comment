@@ -13,16 +13,15 @@ import (
 
 // Params groups dependencies required for routing.
 type Params struct {
-	Engine             *gin.Engine
-	AuthMiddleware     *middleware.AuthMiddleware
-	AuthHandler        *handlers.AuthHandler
-	UserHandler        *handlers.UserHandler
-	ReviewHandler      *handlers.ReviewHandler
-	StoreHandler       *handlers.StoreHandler
-	ReviewStoreHandler *handlers.ReviewStoreHandler
-	AdminHandler       *adminHandlers.ReviewAdminHandler
-	StoreAdminHandler  *adminHandlers.StoreAdminHandler
-	StaticUploadDir    string
+	Engine            *gin.Engine
+	AuthMiddleware    *middleware.AuthMiddleware
+	AuthHandler       *handlers.AuthHandler
+	UserHandler       *handlers.UserHandler
+	ReviewHandler     *handlers.ReviewHandler
+	StoreHandler      *handlers.StoreHandler
+	AdminHandler      *adminHandlers.ReviewAdminHandler
+	StoreAdminHandler *adminHandlers.StoreAdminHandler
+	StaticUploadDir   string
 }
 
 // Register configures API routes on the provided engine.
@@ -41,43 +40,31 @@ func Register(p Params) {
 
 	if p.StaticUploadDir != "" {
 		api.Static("/uploads", p.StaticUploadDir)
-
-		p.Engine.NoRoute(func(c *gin.Context) {
-			// For any unhandled API routes, return a standard JSON 404 error.
-			c.JSON(404, gin.H{"error": "not found"})
-		})
 	}
 
+	// --- Public Routes ---
 	api.GET("/reviews", p.ReviewHandler.ListPublic)
-	// Detail endpoint should be accessible to authed/unauthed; optional auth ensures role-based access when provided.
 	api.GET("/reviews/:id", p.AuthMiddleware.OptionalAuth(), p.ReviewHandler.Detail)
+	api.GET("/stores", p.StoreHandler.SearchStores)
+	api.GET("/stores/:id", p.StoreHandler.GetStore)
+	api.GET("/stores/:id/reviews", p.StoreHandler.GetStoreReviews)
 
+	// --- Protected Routes ---
 	protected := api.Group("")
 	protected.Use(p.AuthMiddleware.RequireAuth())
 	{
+		// User
 		protected.GET("/users/me", p.UserHandler.Me)
-
-		protected.POST("/reviews", p.ReviewHandler.Submit)
 		protected.GET("/reviews/me", p.ReviewHandler.MyReviews)
+
+		// Store
+		protected.POST("/stores", p.StoreHandler.CreateStore)
+
+		// Review
+		protected.POST("/stores/:id/reviews", p.StoreHandler.CreateReview)
+		protected.PUT("/stores/:id/reviews/:reviewId", p.StoreHandler.UpdateReview)
+		protected.DELETE("/stores/:id/reviews/:reviewId", p.StoreHandler.DeleteReview)
 		protected.POST("/reviews/:id/images", p.ReviewHandler.UploadImage)
-	}
-
-	// 店铺相关接口（公开）
-	stores := api.Group("/stores")
-	{
-		stores.GET("", p.StoreHandler.SearchStores)
-		stores.GET("/:id", p.StoreHandler.GetStore)
-	}
-
-	// 店铺相关接口（需要认证）
-	protectedStores := api.Group("")
-	protectedStores.Use(p.AuthMiddleware.RequireAuth())
-	{
-		protectedStores.GET("/stores/:id/my-review", p.StoreHandler.GetMyReview)
-		protectedStores.POST("/stores/with-review", p.StoreHandler.CreateStoreWithReview)
-		protectedStores.POST("/reviews/store", p.ReviewStoreHandler.SubmitReview)
-		protectedStores.PUT("/reviews/store/:id", p.ReviewStoreHandler.UpdateReview)
-		protectedStores.GET("/stores/:id/reviews", p.ReviewStoreHandler.GetStoreReviews)
 	}
 
 	// 管理员接口
@@ -92,6 +79,7 @@ func Register(p Params) {
 
 		// 店铺管理
 		admin.GET("/stores/pending", p.StoreAdminHandler.Pending)
+		admin.POST("/stores", p.StoreAdminHandler.CreateStore)
 		admin.PUT("/stores/:id/approve", p.StoreAdminHandler.Approve)
 		admin.PUT("/stores/:id/reject", p.StoreAdminHandler.Reject)
 		admin.DELETE("/stores/:id", p.StoreAdminHandler.Delete)

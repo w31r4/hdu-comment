@@ -56,6 +56,7 @@ func Load() (*Config, error) {
 
 	v.SetDefault("AUTH_ACCESS_TOKEN_TTL", "72h")
 	v.SetDefault("AUTH_REFRESH_TOKEN_TTL", "168h")
+	v.SetDefault("AUTH_JWT_SECRET", "a-serect-key-for-dev-and-test")
 
 	v.SetDefault("STORAGE_PROVIDER", "local")
 	v.SetDefault("STORAGE_UPLOAD_DIR", "uploads")

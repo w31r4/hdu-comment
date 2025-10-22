@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/models"
 	"github.com/hdu-dp/backend/internal/repository"
 	"gorm.io/gorm"
@@ -24,31 +25,20 @@ func NewStoreService(stores *repository.StoreRepository, reviews *repository.Rev
 	return &StoreService{stores: stores, reviews: reviews, db: db}
 }
 
-// CreateStoreInput bundles parameters for a new store.
-type CreateStoreInput struct {
-	Name        string
-	Address     string
-	Phone       string
-	Category    string
-	Description string
-}
-
 // StoreListResult wraps store list responses with pagination info.
 type StoreListResult struct {
-	Data       []models.Store `json:"data"`
-	Pagination Pagination     `json:"pagination"`
+	Data       []dto.StoreResponse `json:"data"`
+	Pagination Pagination          `json:"pagination"`
 }
 
-// Create creates a new store in pending state.
-func (s *StoreService) Create(createdBy uuid.UUID, input CreateStoreInput) (*models.Store, error) {
-	name := strings.TrimSpace(input.Name)
-	address := strings.TrimSpace(input.Address)
-	phone := strings.TrimSpace(input.Phone)
-	category := strings.TrimSpace(input.Category)
-	description := strings.TrimSpace(input.Description)
+// CreateStore creates a new store. Admins can create approved stores directly.
+func (s *StoreService) CreateStore(ctx context.Context, createdBy uuid.UUID, isAdmin bool, req dto.CreateStoreRequest) (*models.Store, error) {
+	name := strings.TrimSpace(req.Name)
+	address := strings.TrimSpace(req.Address)
+	category := strings.TrimSpace(req.Category)
 
-	if name == "" || address == "" {
-		return nil, errors.New("store name and address are required")
+	if name == "" || address == "" || category == "" {
+		return nil, errors.New("store name, address, and category are required")
 	}
 
 	// Check if store already exists
@@ -57,14 +47,18 @@ func (s *StoreService) Create(createdBy uuid.UUID, input CreateStoreInput) (*mod
 		return nil, errors.New("store already exists")
 	}
 
+	status := models.StoreStatusPending
+	if isAdmin {
+		status = models.StoreStatusApproved
+	}
+
 	store := &models.Store{
-		ID:          uuid.New(),
 		Name:        name,
 		Address:     address,
-		Phone:       phone,
+		Phone:       strings.TrimSpace(req.Phone),
 		Category:    category,
-		Description: description,
-		Status:      models.StoreStatusPending,
+		Description: strings.TrimSpace(req.Description),
+		Status:      status,
 		CreatedBy:   createdBy,
 	}
 
@@ -92,7 +86,7 @@ func (s *StoreService) ListApproved(page, pageSize int, query string) (StoreList
 	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 
 	return StoreListResult{
-		Data: stores,
+		Data: dto.ToStoreListResponse(stores),
 		Pagination: Pagination{
 			Page:       page,
 			PageSize:   pageSize,
@@ -120,7 +114,7 @@ func (s *StoreService) ListPending(page, pageSize int) (StoreListResult, error) 
 	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 
 	return StoreListResult{
-		Data: stores,
+		Data: dto.ToStoreListResponse(stores),
 		Pagination: Pagination{
 			Page:       page,
 			PageSize:   pageSize,
@@ -173,42 +167,6 @@ func (s *StoreService) UpdateStoreRating(ctx context.Context, storeID uuid.UUID)
 	}
 
 	return s.stores.UpdateAverageRating(storeID, result.AverageRating, int(result.TotalReviews))
-}
-
-// CreateStoreWithReview creates a new store and review together.
-func (s *StoreService) CreateStoreWithReview(ctx context.Context, userID uuid.UUID, storeInput CreateStoreInput, reviewTitle, reviewContent string, rating float32) (*models.Store, *models.Review, error) {
-	// Create store
-	store, err := s.Create(userID, storeInput)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// Create review for the store
-	review := &models.Review{
-		ID:       uuid.New(),
-		StoreID:  store.ID,
-		AuthorID: userID,
-		Title:    reviewTitle,
-		Content:  reviewContent,
-		Rating:   rating,
-		Status:   models.ReviewStatusPending,
-	}
-
-	if err := s.db.Create(review).Error; err != nil {
-		return nil, nil, err
-	}
-
-	return store, review, nil
-}
-
-// FindByUserAndStore finds a review by user and store (for one-user-one-store constraint).
-func (s *StoreService) FindByUserAndStore(userID, storeID uuid.UUID) (*models.Review, error) {
-	var review models.Review
-	err := s.db.Where("author_id = ? AND store_id = ?", userID, storeID).First(&review).Error
-	if err != nil {
-		return nil, err
-	}
-	return &review, nil
 }
 
 // DeleteStore removes a store by ID.

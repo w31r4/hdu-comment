@@ -29,6 +29,7 @@ type Store struct {
 	TotalReviews    int         `gorm:"default:0" json:"total_reviews"`
 	RejectionReason string      `gorm:"type:text" json:"rejection_reason"`
 	CreatedBy       uuid.UUID   `gorm:"type:char(36);not null" json:"created_by"`
+	AutoCreated     bool        `gorm:"default:false" json:"auto_created"`
 	CreatedAt       time.Time   `json:"created_at"`
 	UpdatedAt       time.Time   `json:"updated_at"`
 }

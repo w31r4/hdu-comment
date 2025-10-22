@@ -153,7 +153,8 @@ func (h *ReviewAdminHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.reviews.DeleteReview(c.Request.Context(), review); err != nil {
+	// The Delete service now handles ownership check
+	if err := h.reviews.Delete(c.Request.Context(), review.AuthorID, review.ID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

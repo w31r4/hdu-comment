@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/models"
 	"github.com/hdu-dp/backend/internal/services"
 	"github.com/hdu-dp/backend/internal/storage"
@@ -44,51 +45,12 @@ func (h *ReviewHandler) ListPublic(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// @Summary      提交新点评
-// @Description  已认证用户提交一条新的点评，需要等待管理员审核。
-// @Tags         点评
-// @Accept       json
-// @Produce      json
-// @Param        body body object{title=string,address=string,description=string,rating=number} true "点评内容"
-// @Success      201 {object} models.Review "创建成功"
-// @Failure      400 {object} object{error=string} "请求参数错误"
-// @Security     ApiKeyAuth
-// @Router       /reviews [post]
-func (h *ReviewHandler) Submit(c *gin.Context) {
-	userID := c.MustGet("user_id").(uuid.UUID)
-	var req struct {
-		Title       string  `json:"title"`
-		Description string  `json:"description"`
-		Rating      float32 `json:"rating"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
-		return
-	}
-
-	// TODO: 临时使用固定的storeID，后续需要从前端获取实际的storeID
-	tempStoreID := uuid.MustParse("00000000-0000-0000-0000-000000000001") // 临时storeID
-	
-	review, err := h.reviews.Submit(userID, tempStoreID, services.CreateReviewInput{
-		Title:       req.Title,
-		Description: req.Description,
-		Rating:      req.Rating,
-	})
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, review)
-}
-
 // @Summary      获取点评详情
 // @Description  根据 ID 获取单个点评的详细信息。未审核的点评仅作者和管理员可见。
 // @Tags         点评
 // @Produce      json
 // @Param        id path string true "点评 ID"
-// @Success      200 {object} models.Review
+// @Success      200 {object} dto.ReviewResponse
 // @Failure      400 {object} object{error=string} "无效的点评 ID"
 // @Failure      403 {object} object{error=string} "无权访问"
 // @Failure      404 {object} object{error=string} "点评不存在"
@@ -122,7 +84,7 @@ func (h *ReviewHandler) Detail(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, review)
+	c.JSON(http.StatusOK, dto.ToReviewResponse(review))
 }
 
 // @Summary      我的点评列表
@@ -170,14 +132,15 @@ func (h *ReviewHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
+	// Service layer will validate ownership
+	userID := c.MustGet("user_id").(uuid.UUID)
+
 	review, err := h.reviews.Get(reviewID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
 		return
 	}
-
-	userID := c.MustGet("user_id").(uuid.UUID)
-	if err := services.ValidateOwnership(review, userID); err != nil {
+	if review.AuthorID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "not owner"})
 		return
 	}

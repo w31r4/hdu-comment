@@ -111,6 +111,16 @@ func (r *ReviewRepository) FindByID(id uuid.UUID) (*models.Review, error) {
 	return &review, nil
 }
 
+// FindByUserAndStore finds a review by user and store ID.
+func (r *ReviewRepository) FindByUserAndStore(userID, storeID uuid.UUID) (*models.Review, error) {
+	var review models.Review
+	err := r.db.Where("author_id = ? AND store_id = ?", userID, storeID).First(&review).Error
+	if err != nil {
+		return nil, err
+	}
+	return &review, nil
+}
+
 // AddImage appends a review image entry.
 func (r *ReviewRepository) AddImage(image *models.ReviewImage) error {
 	return r.db.Create(image).Error
