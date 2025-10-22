@@ -297,6 +297,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/stores": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "管理员直接创建一个已审核通过的店铺。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理员 - 店铺"
+                ],
+                "summary": "创建新店铺",
+                "parameters": [
+                    {
+                        "description": "店铺信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateStoreRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StoreResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "店铺已存在",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stores/pending": {
             "get": {
                 "security": [
@@ -930,68 +991,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "已认证用户提交一条新的点评，需要等待管理员审核。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "点评"
-                ],
-                "summary": "提交新点评",
-                "parameters": [
-                    {
-                        "description": "点评内容",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "address": {
-                                    "type": "string"
-                                },
-                                "description": {
-                                    "type": "string"
-                                },
-                                "rating": {
-                                    "type": "number"
-                                },
-                                "title": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "创建成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         "/reviews/me": {
@@ -1074,146 +1073,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/reviews/store": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "用户对指定店铺提交评价，检查是否已有评价。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "评价 - 店铺"
-                ],
-                "summary": "提交店铺评价",
-                "parameters": [
-                    {
-                        "description": "评价信息",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.SubmitReviewInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "创建成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "已存在评价",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reviews/store/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "用户更新自己对指定店铺的现有评价。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "评价 - 店铺"
-                ],
-                "summary": "更新店铺评价",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "评价 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新内容",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.UpdateReviewInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新后的评价",
-                        "schema": {
-                            "$ref": "#/definitions/models.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "无权操作",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "评价不存在",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/reviews/{id}": {
             "get": {
                 "description": "根据 ID 获取单个点评的详细信息。未审核的点评仅作者和管理员可见。",
@@ -1237,7 +1096,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Review"
+                            "$ref": "#/definitions/dto.ReviewResponse"
                         }
                     },
                     "400": {
@@ -1415,16 +1274,14 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/stores/with-review": {
+            },
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "用户创建新店铺并同时提交对该店铺的评价，两者都需要审核。",
+                "description": "用户创建一个新的店铺，需要等待管理员审核。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1434,15 +1291,15 @@ const docTemplate = `{
                 "tags": [
                     "店铺"
                 ],
-                "summary": "创建新店铺并提交评价",
+                "summary": "创建新店铺",
                 "parameters": [
                     {
-                        "description": "店铺和评价信息",
+                        "description": "店铺信息",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.CreateStoreWithReviewInput"
+                            "$ref": "#/definitions/dto.CreateStoreRequest"
                         }
                     }
                 ],
@@ -1450,15 +1307,7 @@ const docTemplate = `{
                     "201": {
                         "description": "创建成功",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "review": {
-                                    "$ref": "#/definitions/models.Review"
-                                },
-                                "store": {
-                                    "$ref": "#/definitions/models.Store"
-                                }
-                            }
+                            "$ref": "#/definitions/dto.StoreResponse"
                         }
                     },
                     "400": {
@@ -1488,7 +1337,7 @@ const docTemplate = `{
         },
         "/stores/{id}": {
             "get": {
-                "description": "根据 ID 获取单个店铺的详细信息，包含综合评分和评价列表。",
+                "description": "根据 ID 获取单个店铺的详细信息。",
                 "produces": [
                     "application/json"
                 ],
@@ -1509,7 +1358,7 @@ const docTemplate = `{
                     "200": {
                         "description": "店铺详情",
                         "schema": {
-                            "$ref": "#/definitions/models.Store"
+                            "$ref": "#/definitions/dto.StoreResponse"
                         }
                     },
                     "400": {
@@ -1537,75 +1386,16 @@ const docTemplate = `{
                 }
             }
         },
-        "/stores/{id}/my-review": {
+        "/stores/{id}/reviews": {
             "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取当前用户对指定店铺的评价（如果有）。",
+                "description": "获取指定店铺下所有已审核通过的评价。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "店铺"
                 ],
-                "summary": "获取用户对店铺的评价",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "店铺 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "用户的评价",
-                        "schema": {
-                            "$ref": "#/definitions/models.Review"
-                        }
-                    },
-                    "204": {
-                        "description": "用户没有对该店铺的评价"
-                    },
-                    "400": {
-                        "description": "无效的店铺 ID",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "未认证",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/stores/{id}/reviews": {
-            "get": {
-                "description": "获取指定店铺的所有已审核通过的评价，支持分页。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "评价 - 店铺"
-                ],
-                "summary": "获取店铺的所有评价",
+                "summary": "获取店铺的评价列表",
                 "parameters": [
                     {
                         "type": "string",
@@ -1647,8 +1437,251 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "为指定店铺提交一条新评价。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "店铺"
+                ],
+                "summary": "提交店铺评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "店铺 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "评价内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "用户已评价过该店铺",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stores/{id}/reviews/{reviewId}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新用户对指定店铺的评价。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "店铺"
+                ],
+                "summary": "更新店铺评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "店铺 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "评价 ID",
+                        "name": "reviewId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的评价内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
                     "404": {
-                        "description": "店铺不存在",
+                        "description": "评价不存在",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除用户对指定店铺的评价。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "店铺"
+                ],
+                "summary": "删除店铺评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "店铺 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "评价 ID",
+                        "name": "reviewId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "删除成功"
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "评价不存在",
                         "schema": {
                             "type": "object",
                             "properties": {
@@ -1727,52 +1760,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.CreateStoreWithReviewInput": {
+        "dto.AuthorResponse": {
             "type": "object",
-            "required": [
-                "rating",
-                "review_content",
-                "review_title",
-                "store_address",
-                "store_name"
-            ],
             "properties": {
-                "rating": {
-                    "type": "number",
-                    "maximum": 5,
-                    "minimum": 0
-                },
-                "review_content": {
+                "display_name": {
                     "type": "string"
                 },
-                "review_title": {
-                    "description": "评价信息",
-                    "type": "string"
-                },
-                "store_address": {
-                    "type": "string"
-                },
-                "store_category": {
-                    "type": "string"
-                },
-                "store_description": {
-                    "type": "string"
-                },
-                "store_name": {
-                    "description": "店铺信息",
-                    "type": "string"
-                },
-                "store_phone": {
+                "id": {
                     "type": "string"
                 }
             }
         },
-        "handlers.SubmitReviewInput": {
+        "dto.CreateReviewRequest": {
             "type": "object",
             "required": [
                 "content",
                 "rating",
-                "store_id",
                 "title"
             ],
             "properties": {
@@ -1784,21 +1787,112 @@ const docTemplate = `{
                     "maximum": 5,
                     "minimum": 0
                 },
-                "store_id": {
-                    "type": "string"
-                },
                 "title": {
                     "type": "string"
                 }
             }
         },
-        "handlers.UpdateReviewInput": {
+        "dto.CreateStoreRequest": {
             "type": "object",
             "required": [
-                "content",
-                "rating",
-                "title"
+                "address",
+                "name"
             ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ImageResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ReviewResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "$ref": "#/definitions/dto.AuthorResponse"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ImageResponse"
+                    }
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StoreResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "average_rating": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "total_reviews": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.UpdateReviewRequest": {
+            "type": "object",
             "properties": {
                 "content": {
                     "type": "string"
@@ -1899,6 +1993,9 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
+                "auto_created": {
+                    "type": "boolean"
+                },
                 "average_rating": {
                     "type": "number"
                 },
@@ -1996,7 +2093,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Review"
+                        "$ref": "#/definitions/dto.ReviewResponse"
                     }
                 },
                 "pagination": {
@@ -2010,7 +2107,7 @@ const docTemplate = `{
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Store"
+                        "$ref": "#/definitions/dto.StoreResponse"
                     }
                 },
                 "pagination": {

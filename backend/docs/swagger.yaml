@@ -1,53 +1,13 @@
 basePath: /api/v1
 definitions:
-  handlers.CreateStoreWithReviewInput:
+  dto.AuthorResponse:
     properties:
-      rating:
-        maximum: 5
-        minimum: 0
-        type: number
-      review_content:
+      display_name:
         type: string
-      review_title:
-        description: 评价信息
+      id:
         type: string
-      store_address:
-        type: string
-      store_category:
-        type: string
-      store_description:
-        type: string
-      store_name:
-        description: 店铺信息
-        type: string
-      store_phone:
-        type: string
-    required:
-    - rating
-    - review_content
-    - review_title
-    - store_address
-    - store_name
     type: object
-  handlers.SubmitReviewInput:
-    properties:
-      content:
-        type: string
-      rating:
-        maximum: 5
-        minimum: 0
-        type: number
-      store_id:
-        type: string
-      title:
-        type: string
-    required:
-    - content
-    - rating
-    - store_id
-    - title
-    type: object
-  handlers.UpdateReviewInput:
+  dto.CreateReviewRequest:
     properties:
       content:
         type: string
@@ -61,6 +21,82 @@ definitions:
     - content
     - rating
     - title
+    type: object
+  dto.CreateStoreRequest:
+    properties:
+      address:
+        type: string
+      category:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    required:
+    - address
+    - name
+    type: object
+  dto.ImageResponse:
+    properties:
+      id:
+        type: string
+      url:
+        type: string
+    type: object
+  dto.ReviewResponse:
+    properties:
+      author:
+        $ref: '#/definitions/dto.AuthorResponse'
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/dto.ImageResponse'
+        type: array
+      rating:
+        type: number
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.StoreResponse:
+    properties:
+      address:
+        type: string
+      average_rating:
+        type: number
+      category:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      total_reviews:
+        type: integer
+    type: object
+  dto.UpdateReviewRequest:
+    properties:
+      content:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 0
+        type: number
+      title:
+        type: string
     type: object
   models.Review:
     properties:
@@ -120,6 +156,8 @@ definitions:
     properties:
       address:
         type: string
+      auto_created:
+        type: boolean
       average_rating:
         type: number
       category:
@@ -185,7 +223,7 @@ definitions:
     properties:
       data:
         items:
-          $ref: '#/definitions/models.Review'
+          $ref: '#/definitions/dto.ReviewResponse'
         type: array
       pagination:
         $ref: '#/definitions/services.Pagination'
@@ -194,7 +232,7 @@ definitions:
     properties:
       data:
         items:
-          $ref: '#/definitions/models.Store'
+          $ref: '#/definitions/dto.StoreResponse'
         type: array
       pagination:
         $ref: '#/definitions/services.Pagination'
@@ -387,6 +425,44 @@ paths:
       summary: 待审核点评列表
       tags:
       - 管理
+  /admin/stores:
+    post:
+      consumes:
+      - application/json
+      description: 管理员直接创建一个已审核通过的店铺。
+      parameters:
+      - description: 店铺信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.StoreResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "409":
+          description: 店铺已存在
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 创建新店铺
+      tags:
+      - 管理员 - 店铺
   /admin/stores/{id}:
     delete:
       description: 管理员删除指定的店铺（包含关联的评价和图片记录）。
@@ -794,45 +870,6 @@ paths:
       summary: 公开点评列表
       tags:
       - 点评
-    post:
-      consumes:
-      - application/json
-      description: 已认证用户提交一条新的点评，需要等待管理员审核。
-      parameters:
-      - description: 点评内容
-        in: body
-        name: body
-        required: true
-        schema:
-          properties:
-            address:
-              type: string
-            description:
-              type: string
-            rating:
-              type: number
-            title:
-              type: string
-          type: object
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 创建成功
-          schema:
-            $ref: '#/definitions/models.Review'
-        "400":
-          description: 请求参数错误
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: 提交新点评
-      tags:
-      - 点评
   /reviews/{id}:
     get:
       description: 根据 ID 获取单个点评的详细信息。未审核的点评仅作者和管理员可见。
@@ -848,7 +885,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Review'
+            $ref: '#/definitions/dto.ReviewResponse'
         "400":
           description: 无效的点评 ID
           schema:
@@ -982,94 +1019,6 @@ paths:
       summary: 我的点评列表
       tags:
       - 点评
-  /reviews/store:
-    post:
-      consumes:
-      - application/json
-      description: 用户对指定店铺提交评价，检查是否已有评价。
-      parameters:
-      - description: 评价信息
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.SubmitReviewInput'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: 创建成功
-          schema:
-            $ref: '#/definitions/models.Review'
-        "400":
-          description: 请求参数错误
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "409":
-          description: 已存在评价
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: 提交店铺评价
-      tags:
-      - 评价 - 店铺
-  /reviews/store/{id}:
-    put:
-      consumes:
-      - application/json
-      description: 用户更新自己对指定店铺的现有评价。
-      parameters:
-      - description: 评价 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 更新内容
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.UpdateReviewInput'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 更新后的评价
-          schema:
-            $ref: '#/definitions/models.Review'
-        "400":
-          description: 请求参数错误
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "403":
-          description: 无权操作
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "404":
-          description: 评价不存在
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: 更新店铺评价
-      tags:
-      - 评价 - 店铺
   /stores:
     get:
       description: 根据名称或地址搜索已审核通过的店铺，支持分页。
@@ -1105,9 +1054,46 @@ paths:
       summary: 搜索店铺
       tags:
       - 店铺
+    post:
+      consumes:
+      - application/json
+      description: 用户创建一个新的店铺，需要等待管理员审核。
+      parameters:
+      - description: 店铺信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.StoreResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "409":
+          description: 店铺已存在
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 创建新店铺
+      tags:
+      - 店铺
   /stores/{id}:
     get:
-      description: 根据 ID 获取单个店铺的详细信息，包含综合评分和评价列表。
+      description: 根据 ID 获取单个店铺的详细信息。
       parameters:
       - description: 店铺 ID
         in: path
@@ -1120,7 +1106,7 @@ paths:
         "200":
           description: 店铺详情
           schema:
-            $ref: '#/definitions/models.Store'
+            $ref: '#/definitions/dto.StoreResponse'
         "400":
           description: 无效的店铺 ID
           schema:
@@ -1138,46 +1124,9 @@ paths:
       summary: 获取店铺详情
       tags:
       - 店铺
-  /stores/{id}/my-review:
-    get:
-      description: 获取当前用户对指定店铺的评价（如果有）。
-      parameters:
-      - description: 店铺 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 用户的评价
-          schema:
-            $ref: '#/definitions/models.Review'
-        "204":
-          description: 用户没有对该店铺的评价
-        "400":
-          description: 无效的店铺 ID
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-        "401":
-          description: 未认证
-          schema:
-            properties:
-              error:
-                type: string
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: 获取用户对店铺的评价
-      tags:
-      - 店铺
   /stores/{id}/reviews:
     get:
-      description: 获取指定店铺的所有已审核通过的评价，支持分页。
+      description: 获取指定店铺下所有已审核通过的评价。
       parameters:
       - description: 店铺 ID
         in: path
@@ -1208,40 +1157,39 @@ paths:
               error:
                 type: string
             type: object
-        "404":
-          description: 店铺不存在
+        "500":
+          description: 服务器内部错误
           schema:
             properties:
               error:
                 type: string
             type: object
-      summary: 获取店铺的所有评价
+      summary: 获取店铺的评价列表
       tags:
-      - 评价 - 店铺
-  /stores/with-review:
+      - 店铺
     post:
       consumes:
       - application/json
-      description: 用户创建新店铺并同时提交对该店铺的评价，两者都需要审核。
+      description: 为指定店铺提交一条新评价。
       parameters:
-      - description: 店铺和评价信息
+      - description: 店铺 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 评价内容
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/handlers.CreateStoreWithReviewInput'
+          $ref: '#/definitions/dto.CreateReviewRequest'
       produces:
       - application/json
       responses:
         "201":
           description: 创建成功
           schema:
-            properties:
-              review:
-                $ref: '#/definitions/models.Review'
-              store:
-                $ref: '#/definitions/models.Store'
-            type: object
+            $ref: '#/definitions/dto.ReviewResponse'
         "400":
           description: 请求参数错误
           schema:
@@ -1249,8 +1197,15 @@ paths:
               error:
                 type: string
             type: object
+        "401":
+          description: 未认证
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
         "409":
-          description: 店铺已存在
+          description: 用户已评价过该店铺
           schema:
             properties:
               error:
@@ -1258,7 +1213,113 @@ paths:
             type: object
       security:
       - ApiKeyAuth: []
-      summary: 创建新店铺并提交评价
+      summary: 提交店铺评价
+      tags:
+      - 店铺
+  /stores/{id}/reviews/{reviewId}:
+    delete:
+      description: 删除用户对指定店铺的评价。
+      parameters:
+      - description: 店铺 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 评价 ID
+        in: path
+        name: reviewId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 删除成功
+        "401":
+          description: 未认证
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "403":
+          description: 无权操作
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: 评价不存在
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 删除店铺评价
+      tags:
+      - 店铺
+    put:
+      consumes:
+      - application/json
+      description: 更新用户对指定店铺的评价。
+      parameters:
+      - description: 店铺 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 评价 ID
+        in: path
+        name: reviewId
+        required: true
+        type: string
+      - description: 要更新的评价内容
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/dto.ReviewResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "401":
+          description: 未认证
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "403":
+          description: 无权操作
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: 评价不存在
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 更新店铺评价
       tags:
       - 店铺
   /users/me:
