@@ -65,7 +65,7 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, jwtManager, refreshRepo, cfg.Auth.RefreshTokenTTL)
 	reviewService := services.NewReviewService(reviewRepo, storeRepo, storageProvider, db)
-	storeService := services.NewStoreService(storeRepo, reviewRepo, db)
+	storeService := services.NewStoreService(storeRepo, reviewRepo, storageProvider, db)
 	idempotencyService := services.NewIdempotencyService(idempotencyRepo, cfg.Idempotency.TTL)
 
 	authHandler := handlers.NewAuthHandler(authService)

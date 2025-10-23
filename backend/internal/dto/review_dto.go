@@ -82,3 +82,10 @@ func ToReviewListResponse(reviews []models.Review) []ReviewResponse {
 	}
 	return res
 }
+
+// AutoCreateReviewResponse is the DTO for the response of auto-creating a store with a review.
+type AutoCreateReviewResponse struct {
+	Store      StoreResponse  `json:"store"`
+	Review     ReviewResponse `json:"review"`
+	IsNewStore bool           `json:"is_new_store"`
+}

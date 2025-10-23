@@ -10,10 +10,9 @@ import (
 // ListFilters holds common query parameters for paginated lists.
 type ListFilters struct {
 	Page     int
-	PageSize int
+	Limit    int
 	Query    string
-	SortBy   string
-	SortDir  string
+	Sort     string
 	Status   string
 	Category string
 	UserID   string
@@ -23,29 +22,19 @@ type ListFilters struct {
 // ParseListFilters extracts list-related query parameters from the Gin context.
 func ParseListFilters(c *gin.Context) ListFilters {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // Use limit for page size
-	if pageSize <= 0 {
-		pageSize = 10
+	if page <= 0 {
+		page = 1
 	}
-
-	// Handle sorting (e.g., "-created_at" -> sort by "created_at" descending)
-	sort := c.DefaultQuery("sort", "-created_at")
-	sortBy := "created_at"
-	sortDir := "desc"
-	if strings.HasPrefix(sort, "-") {
-		sortBy = strings.TrimPrefix(sort, "-")
-		sortDir = "desc"
-	} else {
-		sortBy = sort
-		sortDir = "asc"
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if limit <= 0 {
+		limit = 10
 	}
 
 	return ListFilters{
 		Page:     page,
-		PageSize: pageSize,
-		Query:    strings.TrimSpace(c.Query("q")), // Use "q" for query
-		SortBy:   sortBy,
-		SortDir:  sortDir,
+		Limit:    limit,
+		Query:    strings.TrimSpace(c.Query("q")),
+		Sort:     c.DefaultQuery("sort", "-created_at"),
 		Status:   c.Query("status"),
 		Category: c.Query("category"),
 		UserID:   c.Query("userId"),

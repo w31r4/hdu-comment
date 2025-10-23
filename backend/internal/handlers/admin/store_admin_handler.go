@@ -32,7 +32,7 @@ func NewStoreAdminHandler(stores *services.StoreService) *StoreAdminHandler {
 // @Router       /admin/stores/pending [get]
 func (h *StoreAdminHandler) Pending(c *gin.Context) {
 	filters := services.ParseListFilters(c)
-	result, err := h.stores.ListPending(filters.Page, filters.PageSize)
+	result, err := h.stores.ListPending(filters)
 	if err != nil {
 		problem.InternalServerError(err.Error()).Send(c)
 		return
@@ -135,7 +135,7 @@ func (h *StoreAdminHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.stores.DeleteStore(store.ID); err != nil {
+	if err := h.stores.DeleteStore(c.Request.Context(), store.ID); err != nil {
 		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}

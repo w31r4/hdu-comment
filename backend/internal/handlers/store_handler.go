@@ -26,10 +26,10 @@ func NewStoreHandler(stores *services.StoreService, reviews *services.ReviewServ
 // @Description  根据多种条件搜索已审核通过的店铺，支持分页、排序和过滤。
 // @Tags         店铺
 // @Produce      json
-// @Param        q        query string false "搜索关键词 (名称或地址)"
+// @Param        query    query string false "搜索关键词 (名称或地址)"
 // @Param        page     query int    false "页码" default(1)
 // @Param        limit    query int    false "每页数量" default(10)
-// @Param        sort     query string false "排序字段 (e.g., -created_at, average_rating)"
+// @Param        sort     query string false "排序字段 (e.g., -created_at, average_rating)" default(-created_at)
 // @Param        category query string false "店铺分类"
 // @Param        status   query string false "店铺状态 (仅管理员可用)"
 // @Success      200 {object} services.StoreListResult
@@ -128,7 +128,8 @@ func (h *StoreHandler) CreateStore(c *gin.Context) {
 // @Produce      json
 // @Param        id        path      string true "店铺 ID"
 // @Param        page      query     int    false "页码" default(1)
-// @Param        page_size query     int    false "每页数量" default(10)
+// @Param        limit     query     int    false "每页数量" default(10)
+// @Param        sort      query     string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      400 {object} problem.Details "无效的店铺 ID"
 // @Failure      500 {object} problem.Details "服务器内部错误"
@@ -169,27 +170,6 @@ func (h *StoreHandler) GetStoreReviews(c *gin.Context) {
 // @Router       /stores/{id}/reviews [post]
 func (h *StoreHandler) CreateReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
-	autoCreate := c.Query("autoCreate") == "true"
-
-	if autoCreate {
-		var req dto.CreateReviewForNewStoreRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			problem.BadRequest("invalid payload for auto-create").Send(c)
-			return
-		}
-		store, review, err := h.reviews.CreateReviewForNewStore(c.Request.Context(), userID, req)
-		if err != nil {
-			problem.BadRequest(err.Error()).Send(c)
-			return
-		}
-		c.Header("Location", "/api/v1/reviews/"+review.ID.String())
-		c.JSON(http.StatusCreated, gin.H{
-			"store":        dto.ToStoreResponse(store),
-			"review":       dto.ToReviewResponse(review),
-			"is_new_store": true,
-		})
-		return
-	}
 
 	storeID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -214,10 +194,7 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 	}
 
 	c.Header("Location", "/api/v1/reviews/"+review.ID.String())
-	c.JSON(http.StatusCreated, gin.H{
-		"review":       dto.ToReviewResponse(review),
-		"is_new_store": false,
-	})
+	c.JSON(http.StatusCreated, dto.ToReviewResponse(review))
 }
 
 // @Summary      更新店铺评价

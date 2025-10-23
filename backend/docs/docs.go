@@ -51,7 +51,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -61,25 +61,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "enum": [
-                            "created_at",
-                            "rating"
-                        ],
                         "type": "string",
-                        "default": "created_at",
-                        "description": "排序字段 (created_at, rating)",
+                        "default": "-created_at",
+                        "description": "排序字段 (e.g., -created_at, rating)",
                         "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "default": "desc",
-                        "description": "排序顺序 (asc, desc)",
-                        "name": "order",
                         "in": "query"
                     }
                 ],
@@ -820,7 +805,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "limit",
                         "in": "query"
                     },
                     {
@@ -830,25 +815,10 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "enum": [
-                            "created_at",
-                            "rating"
-                        ],
                         "type": "string",
-                        "default": "created_at",
-                        "description": "排序字段 (created_at, rating)",
+                        "default": "-created_at",
+                        "description": "排序字段 (e.g., -created_at, rating)",
                         "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "default": "desc",
-                        "description": "排序顺序 (asc, desc)",
-                        "name": "order",
                         "in": "query"
                     }
                 ],
@@ -861,6 +831,79 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "创建一个新的评价。如果提供了 ` + "`" + `autoCreateStore=true` + "`" + ` 查询参数，则会在店铺不存在时自动创建店铺。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "点评"
+                ],
+                "summary": "创建新评价",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "是否在店铺不存在时自动创建",
+                        "name": "autoCreateStore",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "幂等键 (UUID)，用于防止重复提交",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "评价和新店铺信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateReviewForNewStoreRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "409": {
+                        "description": "用户已评价过该店铺",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "429": {
+                        "description": "请求正在处理中",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
@@ -997,7 +1040,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "搜索关键词 (名称或地址)",
-                        "name": "q",
+                        "name": "query",
                         "in": "query"
                     },
                     {
@@ -1016,6 +1059,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "-created_at",
                         "description": "排序字段 (e.g., -created_at, average_rating)",
                         "name": "sort",
                         "in": "query"
@@ -1168,7 +1212,14 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "-created_at",
+                        "description": "排序字段 (e.g., -created_at, rating)",
+                        "name": "sort",
                         "in": "query"
                     }
                 ],
@@ -1500,6 +1551,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "default": "-created_at",
                         "description": "排序字段 (e.g., -created_at, rating)",
                         "name": "sort",
                         "in": "query"

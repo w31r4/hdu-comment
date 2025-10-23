@@ -10,6 +10,7 @@ import (
 	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/models"
 	"github.com/hdu-dp/backend/internal/repository"
+	"github.com/hdu-dp/backend/internal/storage"
 	"gorm.io/gorm"
 )
 
@@ -17,12 +18,13 @@ import (
 type StoreService struct {
 	stores  *repository.StoreRepository
 	reviews *repository.ReviewRepository
+	storage storage.FileStorage
 	db      *gorm.DB
 }
 
 // NewStoreService constructs a store service instance.
-func NewStoreService(stores *repository.StoreRepository, reviews *repository.ReviewRepository, db *gorm.DB) *StoreService {
-	return &StoreService{stores: stores, reviews: reviews, db: db}
+func NewStoreService(stores *repository.StoreRepository, reviews *repository.ReviewRepository, storage storage.FileStorage, db *gorm.DB) *StoreService {
+	return &StoreService{stores: stores, reviews: reviews, storage: storage, db: db}
 }
 
 // StoreListResult wraps store list responses with pagination info.
@@ -70,7 +72,7 @@ func (s *StoreService) CreateStore(ctx context.Context, createdBy uuid.UUID, isA
 
 // ListStores returns stores based on filters.
 func (s *StoreService) ListStores(filters ListFilters) (StoreListResult, error) {
-	offset := (filters.Page - 1) * filters.PageSize
+	offset := (filters.Page - 1) * filters.Limit
 
 	// Convert status string to model type
 	var statuses []models.StoreStatus
@@ -82,50 +84,52 @@ func (s *StoreService) ListStores(filters ListFilters) (StoreListResult, error) 
 		Query:    filters.Query,
 		Statuses: statuses,
 		Category: filters.Category,
-		SortBy:   filters.SortBy,
-		SortDir:  filters.SortDir,
-		Limit:    filters.PageSize,
+		Sort:     filters.Sort,
+		Limit:    filters.Limit,
 		Offset:   offset,
 	})
 	if err != nil {
 		return StoreListResult{}, err
 	}
 
-	totalPages := int((total + int64(filters.PageSize) - 1) / int64(filters.PageSize))
+	totalPages := int((total + int64(filters.Limit) - 1) / int64(filters.Limit))
 
 	return StoreListResult{
 		Data: dto.ToStoreListResponse(stores),
 		Pagination: Pagination{
 			Page:       filters.Page,
-			PageSize:   filters.PageSize,
+			PageSize:   filters.Limit,
 			Total:      total,
 			TotalPages: totalPages,
 		},
 	}, nil
 }
 
-// ListPending returns pending stores for admin review.
-func (s *StoreService) ListPending(page, pageSize int) (StoreListResult, error) {
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	offset := (page - 1) * pageSize
+// ListPending returns pending stores for admin review, using the standard list filters.
+func (s *StoreService) ListPending(filters ListFilters) (StoreListResult, error) {
+	offset := (filters.Page - 1) * filters.Limit
 
-	stores, total, err := s.stores.ListByStatus([]models.StoreStatus{models.StoreStatusPending}, pageSize, offset)
+	// Hardcode the status to pending for this specific list function
+	statuses := []models.StoreStatus{models.StoreStatusPending}
+
+	stores, total, err := s.stores.SearchStores(repository.StoreSearchFilters{
+		// Query, Category, etc., are not used here but we could support them in the future.
+		Statuses: statuses,
+		Sort:     filters.Sort,
+		Limit:    filters.Limit,
+		Offset:   offset,
+	})
 	if err != nil {
 		return StoreListResult{}, err
 	}
 
-	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	totalPages := int((total + int64(filters.Limit) - 1) / int64(filters.Limit))
 
 	return StoreListResult{
 		Data: dto.ToStoreListResponse(stores),
 		Pagination: Pagination{
-			Page:       page,
-			PageSize:   pageSize,
+			Page:       filters.Page,
+			PageSize:   filters.Limit,
 			Total:      total,
 			TotalPages: totalPages,
 		},
@@ -183,7 +187,61 @@ func (s *StoreService) UpdateStoreRating(ctx context.Context, storeID uuid.UUID)
 	return s.stores.UpdateAverageRating(storeID, result.AverageRating, int(result.TotalReviews))
 }
 
-// DeleteStore removes a store by ID.
-func (s *StoreService) DeleteStore(id uuid.UUID) error {
-	return s.stores.Delete(id)
+// DeleteStore soft-deletes a store and all its associated reviews and images.
+// It also hard-deletes the image files from the underlying storage.
+func (s *StoreService) DeleteStore(ctx context.Context, id uuid.UUID) error {
+	// 1. Find all review images that need to be deleted from storage.
+	var imagesToDelete []models.ReviewImage
+	err := s.db.Model(&models.ReviewImage{}).
+		Joins("JOIN reviews ON reviews.id = review_images.review_id").
+		Where("reviews.store_id = ?", id).
+		Find(&imagesToDelete).Error
+	if err != nil {
+		return fmt.Errorf("failed to find images for deletion: %w", err)
+	}
+
+	// 2. Perform all database soft deletes in a single transaction.
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// Get review IDs for the store
+		var reviewIDs []uuid.UUID
+		if err := tx.Model(&models.Review{}).Where("store_id = ?", id).Pluck("id", &reviewIDs).Error; err != nil {
+			return err
+		}
+
+		if len(reviewIDs) > 0 {
+			// Soft delete review images for those reviews
+			if err := tx.Where("review_id IN ?", reviewIDs).Delete(&models.ReviewImage{}).Error; err != nil {
+				return err
+			}
+
+			// Soft delete reviews
+			if err := tx.Where("id IN ?", reviewIDs).Delete(&models.Review{}).Error; err != nil {
+				return err
+			}
+		}
+
+		// Soft delete the store
+		if err := tx.Delete(&models.Store{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to soft-delete store and associated data: %w", err)
+	}
+
+	// 3. After the transaction is successful, delete the files from storage.
+	for _, image := range imagesToDelete {
+		if image.StorageKey != "" {
+			if err := s.storage.Delete(ctx, image.StorageKey); err != nil {
+				// Log the error but don't fail the whole operation.
+				// In a real app, you'd use a structured logger.
+				fmt.Printf("warning: failed to delete image %s from storage: %v\n", image.StorageKey, err)
+			}
+		}
+	}
+
+	return nil
 }

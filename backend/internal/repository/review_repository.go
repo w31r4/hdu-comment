@@ -25,8 +25,7 @@ type ListOptions struct {
 	AuthorID *uuid.UUID
 	StoreID  *uuid.UUID
 	Query    string
-	SortBy   string
-	SortDir  string
+	Sort     string
 	Limit    int
 	Offset   int
 }
@@ -62,20 +61,20 @@ func (r *ReviewRepository) List(opts ListOptions) (ListResult, error) {
 
 	listQuery := base.Session(&gorm.Session{}).Preload("Images").Preload("Author")
 
-	sortBy := "created_at"
-	switch strings.ToLower(opts.SortBy) {
-	case "rating":
-		sortBy = "rating"
-	case "created_at":
-		sortBy = "created_at"
-	}
+	order := "created_at DESC" // Default order
+	if opts.Sort != "" {
+		field := strings.TrimPrefix(opts.Sort, "-")
+		dir := "DESC"
+		if !strings.HasPrefix(opts.Sort, "-") {
+			dir = "ASC"
+		}
 
-	sortDir := "DESC"
-	if strings.EqualFold(opts.SortDir, "asc") {
-		sortDir = "ASC"
+		switch field {
+		case "created_at", "rating":
+			order = field + " " + dir
+		}
 	}
-
-	listQuery = listQuery.Order(fmt.Sprintf("%s %s", sortBy, sortDir))
+	listQuery = listQuery.Order(order)
 
 	if opts.Limit > 0 {
 		listQuery = listQuery.Limit(opts.Limit)

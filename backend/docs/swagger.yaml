@@ -397,27 +397,16 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: page_size
+        name: limit
         type: integer
       - description: 搜索关键词
         in: query
         name: query
         type: string
-      - default: created_at
-        description: 排序字段 (created_at, rating)
-        enum:
-        - created_at
-        - rating
+      - default: -created_at
+        description: 排序字段 (e.g., -created_at, rating)
         in: query
         name: sort
-        type: string
-      - default: desc
-        description: 排序顺序 (asc, desc)
-        enum:
-        - asc
-        - desc
-        in: query
-        name: order
         type: string
       produces:
       - application/json
@@ -793,27 +782,16 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: page_size
+        name: limit
         type: integer
       - description: 搜索关键词
         in: query
         name: query
         type: string
-      - default: created_at
-        description: 排序字段 (created_at, rating)
-        enum:
-        - created_at
-        - rating
+      - default: -created_at
+        description: 排序字段 (e.g., -created_at, rating)
         in: query
         name: sort
-        type: string
-      - default: desc
-        description: 排序顺序 (asc, desc)
-        enum:
-        - asc
-        - desc
-        in: query
-        name: order
         type: string
       produces:
       - application/json
@@ -827,6 +805,53 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       summary: 公开点评列表
+      tags:
+      - 点评
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的评价。如果提供了 `autoCreateStore=true` 查询参数，则会在店铺不存在时自动创建店铺。
+      parameters:
+      - description: 是否在店铺不存在时自动创建
+        in: query
+        name: autoCreateStore
+        type: boolean
+      - description: 幂等键 (UUID)，用于防止重复提交
+        in: header
+        name: Idempotency-Key
+        type: string
+      - description: 评价和新店铺信息
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateReviewForNewStoreRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/dto.ReviewResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/problem.Details'
+        "401":
+          description: 未认证
+          schema:
+            $ref: '#/definitions/problem.Details'
+        "409":
+          description: 用户已评价过该店铺
+          schema:
+            $ref: '#/definitions/problem.Details'
+        "429":
+          description: 请求正在处理中
+          schema:
+            $ref: '#/definitions/problem.Details'
+      security:
+      - ApiKeyAuth: []
+      summary: 创建新评价
       tags:
       - 点评
   /reviews/{id}:
@@ -910,7 +935,7 @@ paths:
       parameters:
       - description: 搜索关键词 (名称或地址)
         in: query
-        name: q
+        name: query
         type: string
       - default: 1
         description: 页码
@@ -922,7 +947,8 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: 排序字段 (e.g., -created_at, average_rating)
+      - default: -created_at
+        description: 排序字段 (e.g., -created_at, average_rating)
         in: query
         name: sort
         type: string
@@ -1023,8 +1049,13 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: page_size
+        name: limit
         type: integer
+      - default: -created_at
+        description: 排序字段 (e.g., -created_at, rating)
+        in: query
+        name: sort
+        type: string
       produces:
       - application/json
       responses:
@@ -1235,7 +1266,8 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: 排序字段 (e.g., -created_at, rating)
+      - default: -created_at
+        description: 排序字段 (e.g., -created_at, rating)
         in: query
         name: sort
         type: string

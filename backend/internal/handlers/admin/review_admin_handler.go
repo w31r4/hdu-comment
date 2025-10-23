@@ -25,10 +25,9 @@ func NewReviewAdminHandler(reviews *services.ReviewService, stores *services.Sto
 // @Tags         管理
 // @Produce      json
 // @Param        page      query int    false "页码" default(1)
-// @Param        page_size query int    false "每页数量" default(10)
+// @Param        limit     query int    false "每页数量" default(10)
 // @Param        query     query string false "搜索关键词"
-// @Param        sort      query string false "排序字段 (created_at, rating)" enums(created_at, rating) default(created_at)
-// @Param        order     query string false "排序顺序 (asc, desc)" enums(asc, desc) default(desc)
+// @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth

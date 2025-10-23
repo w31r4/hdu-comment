@@ -75,8 +75,7 @@ type StoreSearchFilters struct {
 	Query    string
 	Statuses []models.StoreStatus
 	Category string
-	SortBy   string
-	SortDir  string
+	Sort     string
 	Limit    int
 	Offset   int
 }
@@ -106,15 +105,17 @@ func (r *StoreRepository) SearchStores(filters StoreSearchFilters) ([]models.Sto
 
 	// Sorting
 	order := "created_at DESC" // Default order
-	if filters.SortBy != "" {
+	if filters.Sort != "" {
 		// Basic validation to prevent SQL injection
-		switch filters.SortBy {
+		field := strings.TrimPrefix(filters.Sort, "-")
+		dir := "DESC"
+		if !strings.HasPrefix(filters.Sort, "-") {
+			dir = "ASC"
+		}
+
+		switch field {
 		case "created_at", "average_rating":
-			dir := "DESC"
-			if strings.ToUpper(filters.SortDir) == "ASC" {
-				dir = "ASC"
-			}
-			order = filters.SortBy + " " + dir
+			order = field + " " + dir
 		}
 	}
 

@@ -27,10 +27,9 @@ func NewReviewHandler(reviews *services.ReviewService) *ReviewHandler {
 // @Tags         点评
 // @Produce      json
 // @Param        page      query int    false "页码" default(1)
-// @Param        page_size query int    false "每页数量" default(10)
+// @Param        limit     query int    false "每页数量" default(10)
 // @Param        query     query string false "搜索关键词"
-// @Param        sort      query string false "排序字段 (created_at, rating)" enums(created_at, rating) default(created_at)
-// @Param        order     query string false "排序顺序 (asc, desc)" enums(asc, desc) default(desc)
+// @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      500 {object} problem.Details "服务器内部错误"
 // @Router       /reviews [get]
@@ -146,4 +145,52 @@ func (h *ReviewHandler) UploadImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, image)
+}
+
+// @Summary      创建新评价
+// @Description  创建一个新的评价。如果提供了 `autoCreateStore=true` 查询参数，则会在店铺不存在时自动创建店铺。
+// @Tags         点评
+// @Accept       json
+// @Produce      json
+// @Param        autoCreateStore query     bool                    false "是否在店铺不存在时自动创建"
+// @Param        Idempotency-Key header    string                  false "幂等键 (UUID)，用于防止重复提交"
+// @Param        body            body      dto.CreateReviewForNewStoreRequest true "评价和新店铺信息"
+// @Success      201             {object}  dto.ReviewResponse "创建成功"
+// @Failure      400             {object}  problem.Details "请求参数错误"
+// @Failure      401             {object}  problem.Details "未认证"
+// @Failure      409             {object}  problem.Details "用户已评价过该店铺"
+// @Failure      429             {object}  problem.Details "请求正在处理中"
+// @Security     ApiKeyAuth
+// @Router       /reviews [post]
+func (h *ReviewHandler) CreateReview(c *gin.Context) {
+	userID := c.MustGet("user_id").(uuid.UUID)
+	autoCreate := c.Query("autoCreateStore") == "true"
+
+	if !autoCreate {
+		problem.BadRequest("this endpoint is for auto-creating stores with reviews. use POST /stores/{id}/reviews for existing stores").Send(c)
+		return
+	}
+
+	var req dto.CreateReviewForNewStoreRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		problem.BadRequest("invalid payload for auto-create").Send(c)
+		return
+	}
+
+	store, review, err := h.reviews.CreateReviewForNewStore(c.Request.Context(), userID, req)
+	if err != nil {
+		if err.Error() == "user has already reviewed this store" {
+			problem.Conflict("you have already reviewed this store").Send(c)
+			return
+		}
+		problem.BadRequest(err.Error()).Send(c)
+		return
+	}
+
+	c.Header("Location", "/api/v1/reviews/"+review.ID.String())
+	c.JSON(http.StatusCreated, dto.AutoCreateReviewResponse{
+		Store:      dto.ToStoreResponse(store),
+		Review:     dto.ToReviewResponse(review),
+		IsNewStore: true,
+	})
 }

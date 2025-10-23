@@ -46,6 +46,7 @@ func Idempotency(service *services.IdempotencyService) gin.HandlerFunc {
 
 		if record != nil {
 			if record.Status == models.IdempotencyKeyStatusInProgress {
+				c.Header("Retry-After", "1") // Suggest retrying after 1 second
 				problem.TooManyRequests("request with this key is already in progress").Send(c)
 				c.Abort()
 				return

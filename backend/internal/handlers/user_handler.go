@@ -64,7 +64,7 @@ func (h *UserHandler) Me(c *gin.Context) {
 // @Produce      json
 // @Param        page      query int    false "页码" default(1)
 // @Param        limit     query int    false "每页数量" default(10)
-// @Param        sort      query string false "排序字段 (e.g., -created_at, rating)"
+// @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth

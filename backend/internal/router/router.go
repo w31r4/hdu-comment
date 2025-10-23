@@ -65,6 +65,8 @@ func Register(p Params) {
 		protected.POST("/stores/:id/images", p.StoreHandler.UploadImage) // Placeholder
 
 		// Review
+		// Review
+		protected.POST("/reviews", p.IdempotencyMiddleware, p.ReviewHandler.CreateReview)
 		protected.POST("/stores/:id/reviews", p.IdempotencyMiddleware, p.StoreHandler.CreateReview)
 		protected.PATCH("/stores/:id/reviews/:reviewId", p.StoreHandler.UpdateReview)
 		protected.DELETE("/stores/:id/reviews/:reviewId", p.StoreHandler.DeleteReview)

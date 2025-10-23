@@ -173,14 +173,13 @@ func (s *ReviewService) ListPending(filters ListFilters) (ReviewListResult, erro
 }
 
 func buildListOptions(filters ListFilters) repository.ListOptions {
-	offset := (filters.Page - 1) * filters.PageSize
+	offset := (filters.Page - 1) * filters.Limit
 
 	opts := repository.ListOptions{
-		Query:   filters.Query,
-		SortBy:  filters.SortBy,
-		SortDir: filters.SortDir,
-		Limit:   filters.PageSize,
-		Offset:  offset,
+		Query:  filters.Query,
+		Sort:   filters.Sort,
+		Limit:  filters.Limit,
+		Offset: offset,
 	}
 
 	if filters.StoreID != "" {
