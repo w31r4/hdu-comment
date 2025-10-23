@@ -38,11 +38,16 @@ type CreateReviewRequest struct {
 	Rating  float32 `json:"rating" binding:"required,min=0,max=5"`
 }
 
+// StoreInfoForReview holds the necessary store data when creating a review for a new store.
+type StoreInfoForReview struct {
+	Name    string `json:"name" binding:"required"`
+	Address string `json:"address" binding:"required"`
+}
+
 // CreateReviewForNewStoreRequest is used when submitting a review for a store that may not exist yet.
 type CreateReviewForNewStoreRequest struct {
 	CreateReviewRequest
-	StoreName    string `json:"store_name" binding:"required"`
-	StoreAddress string `json:"store_address" binding:"required"`
+	Store StoreInfoForReview `json:"store" binding:"required"`
 }
 
 // UpdateReviewRequest is the DTO for updating an existing review.

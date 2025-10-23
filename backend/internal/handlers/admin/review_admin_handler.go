@@ -25,12 +25,12 @@ func NewReviewAdminHandler(reviews *services.ReviewService, stores *services.Sto
 // @Tags         管理
 // @Produce      json
 // @Param        page      query int    false "页码" default(1)
-// @Param        limit     query int    false "每页数量" default(10)
+// @Param        page_size query int    false "每页数量" default(10)
 // @Param        query     query string false "搜索关键词"
 // @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      500 {object} problem.Details "服务器内部错误"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /admin/reviews/pending [get]
 func (h *ReviewAdminHandler) Pending(c *gin.Context) {
 	filters := services.ParseListFilters(c)
@@ -42,79 +42,57 @@ func (h *ReviewAdminHandler) Pending(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// @Summary      批准点评
-// @Description  将指定 ID 的点评状态标记为“已批准”。
-// @Tags         管理
-// @Produce      json
-// @Param        id path string true "点评 ID"
-// @Success      200 {object} models.Review "批准成功"
-// @Failure      400 {object} problem.Details "无效的点评 ID 或状态错误"
-// @Failure      404 {object} problem.Details "点评不存在"
-// @Security     ApiKeyAuth
-// @Router       /admin/reviews/{id}/approve [put]
-func (h *ReviewAdminHandler) Approve(c *gin.Context) {
-	id, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		problem.BadRequest("invalid review id").Send(c)
-		return
-	}
-
-	review, err := h.reviews.Get(id)
-	if err != nil {
-		problem.NotFound("review not found").Send(c)
-		return
-	}
-
-	if err := h.reviews.Approve(review); err != nil {
-		problem.BadRequest(err.Error()).Send(c)
-		return
-	}
-
-	// 触发店铺平均分更新
-	if err := h.stores.UpdateStoreRating(c.Request.Context(), review.StoreID); err != nil {
-		// 即使更新失败，也只记录日志，不阻塞主流程
-		// log.Printf("failed to update store rating for store %s: %v", review.StoreID, err)
-	}
-
-	c.JSON(http.StatusOK, review)
-}
-
-// @Summary      拒绝点评
-// @Description  将指定 ID 的点评状态标记为“已拒绝”，并记录原因。
+// @Summary      更新点评状态
+// @Description  批准或拒绝一个点评。
 // @Tags         管理
 // @Accept       json
 // @Produce      json
-// @Param        id   path string true "点评 ID"
-// @Param        body body object{reason=string} true "拒绝原因"
-// @Success      200  {object} models.Review "拒绝成功"
-// @Failure      400  {object} problem.Details "无效的点评 ID 或请求参数错误"
-// @Failure      404  {object} problem.Details "点评不存在"
-// @Security     ApiKeyAuth
-// @Router       /admin/reviews/{id}/reject [put]
-func (h *ReviewAdminHandler) Reject(c *gin.Context) {
+// @Param        id   path      string true "点评 ID"
+// @Param        body body      object{status=string,reason=string} true "状态更新请求 (status: 'approved' 或 'rejected')"
+// @Success      200  {object}  models.Review "更新成功"
+// @Failure      400  {object}  problem.Details "无效的请求"
+// @Failure      404  {object}  problem.Details "点评不存在"
+// @Failure      409  {object}  problem.Details "点评状态已被处理，无法再次修改"
+// @Security     BearerAuth
+// @Router       /admin/reviews/{id}/status [put]
+func (h *ReviewAdminHandler) UpdateStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		problem.BadRequest("invalid review id").Send(c)
-		return
-	}
-
-	review, err := h.reviews.Get(id)
-	if err != nil {
-		problem.NotFound("review not found").Send(c)
 		return
 	}
 
 	var req struct {
+		Status string `json:"status" binding:"required,oneof=approved rejected"`
 		Reason string `json:"reason"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		problem.BadRequest("invalid payload").Send(c)
+		problem.BadRequest("invalid status or payload: " + err.Error()).Send(c)
 		return
 	}
 
-	if err := h.reviews.Reject(review, req.Reason); err != nil {
-		problem.BadRequest(err.Error()).Send(c)
+	review, err := h.reviews.Get(id)
+	if err != nil {
+		problem.NotFound("review not found").Send(c)
 		return
+	}
+
+	switch req.Status {
+	case "approved":
+		if err := h.reviews.Approve(review); err != nil {
+			problem.Conflict(err.Error()).Send(c)
+			return
+		}
+		// 触发店铺平均分更新
+		if err := h.stores.UpdateStoreRating(c.Request.Context(), review.StoreID); err != nil {
+			// 即使更新失败，也只记录日志，不阻塞主流程
+			// log.Printf("failed to update store rating for store %s: %v", review.StoreID, err)
+		}
+	case "rejected":
+		if err := h.reviews.Reject(review, req.Reason); err != nil {
+			problem.Conflict(err.Error()).Send(c)
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, review)
@@ -129,7 +107,7 @@ func (h *ReviewAdminHandler) Reject(c *gin.Context) {
 // @Failure      400 {object} problem.Details "无效的点评 ID"
 // @Failure      404 {object} problem.Details "点评不存在"
 // @Failure      500 {object} problem.Details "服务器内部错误"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /admin/reviews/{id} [delete]
 func (h *ReviewAdminHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))

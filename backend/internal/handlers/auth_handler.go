@@ -25,7 +25,7 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 // @Accept       json
 // @Produce      json
 // @Param        body body object{email=string,password=string,display_name=string} true "注册信息"
-// @Success      201  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "注册成功"
+// @Success      201  {object} object{access_token=string,refresh_token=string,user=object{id=string,email=string,display_name=string,role=string,created_at=string}} "注册成功"
 // @Failure      400  {object} problem.Details "请求参数错误"
 // @Failure      409  {object} problem.Details "邮箱已被占用"
 // @Router       /auth/register [post]
@@ -61,7 +61,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body body object{email=string,password=string} true "登录信息"
-// @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "登录成功"
+// @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=string,email=string,display_name=string,role=string,created_at=string}} "登录成功"
 // @Failure      400  {object} problem.Details "请求参数错误"
 // @Failure      401  {object} problem.Details "邮箱或密码错误"
 // @Router       /auth/login [post]
@@ -96,7 +96,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        body body object{refresh_token=string} true "刷新令牌"
-// @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "刷新成功"
+// @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=string,email=string,display_name=string,role=string,created_at=string}} "刷新成功"
 // @Failure      400  {object} problem.Details "请求参数错误"
 // @Failure      401  {object} problem.Details "无效的刷新令牌"
 // @Router       /auth/refresh [post]

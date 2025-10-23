@@ -7,6 +7,15 @@ definitions:
       id:
         type: string
     type: object
+  dto.AutoCreateReviewResponse:
+    properties:
+      is_new_store:
+        type: boolean
+      review:
+        $ref: '#/definitions/dto.ReviewResponse'
+      store:
+        $ref: '#/definitions/dto.StoreResponse'
+    type: object
   dto.CreateReviewForNewStoreRequest:
     properties:
       content:
@@ -15,17 +24,14 @@ definitions:
         maximum: 5
         minimum: 0
         type: number
-      store_address:
-        type: string
-      store_name:
-        type: string
+      store:
+        $ref: '#/definitions/dto.StoreInfoForReview'
       title:
         type: string
     required:
     - content
     - rating
-    - store_address
-    - store_name
+    - store
     - title
     type: object
   dto.CreateReviewRequest:
@@ -86,6 +92,16 @@ definitions:
         type: string
       updated_at:
         type: string
+    type: object
+  dto.StoreInfoForReview:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+    required:
+    - address
+    - name
     type: object
   dto.StoreResponse:
     properties:
@@ -312,51 +328,22 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 删除点评
       tags:
       - 管理
-  /admin/reviews/{id}/approve:
-    put:
-      description: 将指定 ID 的点评状态标记为“已批准”。
-      parameters:
-      - description: 点评 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 批准成功
-          schema:
-            $ref: '#/definitions/models.Review'
-        "400":
-          description: 无效的点评 ID 或状态错误
-          schema:
-            $ref: '#/definitions/problem.Details'
-        "404":
-          description: 点评不存在
-          schema:
-            $ref: '#/definitions/problem.Details'
-      security:
-      - ApiKeyAuth: []
-      summary: 批准点评
-      tags:
-      - 管理
-  /admin/reviews/{id}/reject:
+  /admin/reviews/{id}/status:
     put:
       consumes:
       - application/json
-      description: 将指定 ID 的点评状态标记为“已拒绝”，并记录原因。
+      description: 批准或拒绝一个点评。
       parameters:
       - description: 点评 ID
         in: path
         name: id
         required: true
         type: string
-      - description: 拒绝原因
+      - description: '状态更新请求 (status: ''approved'' 或 ''rejected'')'
         in: body
         name: body
         required: true
@@ -364,25 +351,31 @@ paths:
           properties:
             reason:
               type: string
+            status:
+              type: string
           type: object
       produces:
       - application/json
       responses:
         "200":
-          description: 拒绝成功
+          description: 更新成功
           schema:
             $ref: '#/definitions/models.Review'
         "400":
-          description: 无效的点评 ID 或请求参数错误
+          description: 无效的请求
           schema:
             $ref: '#/definitions/problem.Details'
         "404":
           description: 点评不存在
           schema:
             $ref: '#/definitions/problem.Details'
+        "409":
+          description: 点评状态已被处理，无法再次修改
+          schema:
+            $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
-      summary: 拒绝点评
+      - BearerAuth: []
+      summary: 更新点评状态
       tags:
       - 管理
   /admin/reviews/pending:
@@ -397,7 +390,7 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: limit
+        name: page_size
         type: integer
       - description: 搜索关键词
         in: query
@@ -420,7 +413,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 待审核点评列表
       tags:
       - 管理
@@ -452,7 +445,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 创建新店铺
       tags:
       - 管理员 - 店铺
@@ -475,59 +468,30 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 删除店铺
       tags:
       - 管理员 - 店铺
-  /admin/stores/{id}/approve:
+  /admin/stores/{id}/status:
     put:
       consumes:
       - application/json
-      description: 管理员审核通过指定的店铺。
+      description: 管理员批准或拒绝一个店铺。
       parameters:
       - description: 店铺 ID
         in: path
         name: id
         required: true
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 更新后的店铺
-          schema:
-            $ref: '#/definitions/models.Store'
-        "400":
-          description: 店铺已被处理
-          schema:
-            $ref: '#/definitions/problem.Details'
-        "404":
-          description: 店铺不存在
-          schema:
-            $ref: '#/definitions/problem.Details'
-      security:
-      - ApiKeyAuth: []
-      summary: 审核通过店铺
-      tags:
-      - 管理员 - 店铺
-  /admin/stores/{id}/reject:
-    put:
-      consumes:
-      - application/json
-      description: 管理员驳回指定的店铺并填写原因。
-      parameters:
-      - description: 店铺 ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 驳回原因
+      - description: '状态更新请求 (status: ''approved'' 或 ''rejected'')'
         in: body
         name: body
         required: true
         schema:
           properties:
             reason:
+              type: string
+            status:
               type: string
           type: object
       produces:
@@ -538,16 +502,20 @@ paths:
           schema:
             $ref: '#/definitions/models.Store'
         "400":
-          description: 店铺已被处理
+          description: 无效的请求
           schema:
             $ref: '#/definitions/problem.Details'
         "404":
           description: 店铺不存在
           schema:
             $ref: '#/definitions/problem.Details'
+        "409":
+          description: 店铺状态已被处理，无法再次修改
+          schema:
+            $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
-      summary: 驳回店铺
+      - BearerAuth: []
+      summary: 更新店铺状态
       tags:
       - 管理员 - 店铺
   /admin/stores/pending:
@@ -576,7 +544,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 待审核店铺列表
       tags:
       - 管理员 - 店铺
@@ -617,7 +585,7 @@ paths:
                   email:
                     type: string
                   id:
-                    type: integer
+                    type: string
                   role:
                     type: string
                 type: object
@@ -699,7 +667,7 @@ paths:
                   email:
                     type: string
                   id:
-                    type: integer
+                    type: string
                   role:
                     type: string
                 type: object
@@ -754,7 +722,7 @@ paths:
                   email:
                     type: string
                   id:
-                    type: integer
+                    type: string
                   role:
                     type: string
                 type: object
@@ -782,7 +750,7 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: limit
+        name: page_size
         type: integer
       - description: 搜索关键词
         in: query
@@ -810,12 +778,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: 创建一个新的评价。如果提供了 `autoCreateStore=true` 查询参数，则会在店铺不存在时自动创建店铺。
+      description: 创建一个新的评价。如果店铺不存在，则根据提供的店铺信息自动创建。此接口为幂等操作。
       parameters:
-      - description: 是否在店铺不存在时自动创建
-        in: query
-        name: autoCreateStore
-        type: boolean
       - description: 幂等键 (UUID)，用于防止重复提交
         in: header
         name: Idempotency-Key
@@ -832,7 +796,7 @@ paths:
         "201":
           description: 创建成功
           schema:
-            $ref: '#/definitions/dto.ReviewResponse'
+            $ref: '#/definitions/dto.AutoCreateReviewResponse'
         "400":
           description: 请求参数错误
           schema:
@@ -842,7 +806,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
         "409":
-          description: 用户已评价过该店铺
+          description: 用户已评价过该店铺或请求正在处理中
           schema:
             $ref: '#/definitions/problem.Details'
         "429":
@@ -850,8 +814,8 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
-      summary: 创建新评价
+      - BearerAuth: []
+      summary: 创建新评价（可自动创建店铺）
       tags:
       - 点评
   /reviews/{id}:
@@ -925,7 +889,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 上传点评图片
       tags:
       - 点评
@@ -945,7 +909,7 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: limit
+        name: page_size
         type: integer
       - default: -created_at
         description: 排序字段 (e.g., -created_at, average_rating)
@@ -1001,7 +965,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 创建新店铺
       tags:
       - 店铺
@@ -1049,7 +1013,7 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: limit
+        name: page_size
         type: integer
       - default: -created_at
         description: 排序字段 (e.g., -created_at, rating)
@@ -1077,34 +1041,23 @@ paths:
     post:
       consumes:
       - application/json
-      description: 为指定店铺提交一条新评价。支持通过 `?autoCreate=true` 在评价时自动创建不存在的店铺。该接口支持通过 `Idempotency-Key`
-        请求头实现幂等性。
+      description: 为指定 ID 的店铺提交一条新评价。此接口为幂等操作。
       parameters:
-      - description: 店铺 ID (当 autoCreate=false 时)
+      - description: 店铺 ID
         in: path
         name: id
         required: true
         type: string
-      - description: 是否在店铺不存在时自动创建
-        in: query
-        name: autoCreate
-        type: boolean
       - description: 幂等键 (UUID)，用于防止重复提交
         in: header
         name: Idempotency-Key
         type: string
-      - description: 评价内容 (当 autoCreate=false)
+      - description: 评价内容
         in: body
         name: body
         required: true
         schema:
           $ref: '#/definitions/dto.CreateReviewRequest'
-      - description: 评价和新店铺信息 (当 autoCreate=true)
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.CreateReviewForNewStoreRequest'
       produces:
       - application/json
       responses:
@@ -1120,17 +1073,17 @@ paths:
           description: 未认证
           schema:
             $ref: '#/definitions/problem.Details'
-        "409":
-          description: 用户已评价过该店铺
+        "404":
+          description: 店铺不存在
           schema:
             $ref: '#/definitions/problem.Details'
-        "429":
-          description: 请求正在处理中
+        "409":
+          description: 用户已评价过该店铺或请求正在处理中
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
-      summary: 提交店铺评价
+      - BearerAuth: []
+      summary: 为店铺提交评价
       tags:
       - 店铺
   /stores/{id}/reviews/{reviewId}:
@@ -1165,7 +1118,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 删除店铺评价
       tags:
       - 店铺
@@ -1214,7 +1167,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 更新店铺评价
       tags:
       - 店铺
@@ -1235,7 +1188,7 @@ paths:
               email:
                 type: string
               id:
-                type: integer
+                type: string
               role:
                 type: string
             type: object
@@ -1248,7 +1201,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 获取当前用户信息
       tags:
       - 用户
@@ -1264,7 +1217,7 @@ paths:
       - default: 10
         description: 每页数量
         in: query
-        name: limit
+        name: page_size
         type: integer
       - default: -created_at
         description: 排序字段 (e.g., -created_at, rating)
@@ -1283,7 +1236,7 @@ paths:
           schema:
             $ref: '#/definitions/problem.Details'
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: 我的点评列表
       tags:
       - 用户

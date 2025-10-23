@@ -28,7 +28,7 @@ func NewStoreHandler(stores *services.StoreService, reviews *services.ReviewServ
 // @Produce      json
 // @Param        query    query string false "搜索关键词 (名称或地址)"
 // @Param        page     query int    false "页码" default(1)
-// @Param        limit    query int    false "每页数量" default(10)
+// @Param        page_size    query int    false "每页数量" default(10)
 // @Param        sort     query string false "排序字段 (e.g., -created_at, average_rating)" default(-created_at)
 // @Param        category query string false "店铺分类"
 // @Param        status   query string false "店铺状态 (仅管理员可用)"
@@ -97,7 +97,7 @@ func (h *StoreHandler) GetStore(c *gin.Context) {
 // @Success      201 {object} dto.StoreResponse "创建成功"
 // @Failure      400 {object} problem.Details "请求参数错误"
 // @Failure      409 {object} problem.Details "店铺已存在"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /stores [post]
 func (h *StoreHandler) CreateStore(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
@@ -128,7 +128,7 @@ func (h *StoreHandler) CreateStore(c *gin.Context) {
 // @Produce      json
 // @Param        id        path      string true "店铺 ID"
 // @Param        page      query     int    false "页码" default(1)
-// @Param        limit     query     int    false "每页数量" default(10)
+// @Param        page_size     query     int    false "每页数量" default(10)
 // @Param        sort      query     string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      400 {object} problem.Details "无效的店铺 ID"
@@ -151,22 +151,20 @@ func (h *StoreHandler) GetStoreReviews(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// @Summary      提交店铺评价
-// @Description  为指定店铺提交一条新评价。支持通过 `?autoCreate=true` 在评价时自动创建不存在的店铺。该接口支持通过 `Idempotency-Key` 请求头实现幂等性。
+// @Summary      为店铺提交评价
+// @Description  为指定 ID 的店铺提交一条新评价。此接口为幂等操作。
 // @Tags         店铺
 // @Accept       json
 // @Produce      json
-// @Param        id              path      string                  true  "店铺 ID (当 autoCreate=false 时)"
-// @Param        autoCreate      query     bool                    false "是否在店铺不存在时自动创建"
+// @Param        id              path      string                  true  "店铺 ID"
 // @Param        Idempotency-Key header    string                  false "幂等键 (UUID)，用于防止重复提交"
-// @Param        body            body      dto.CreateReviewRequest true  "评价内容 (当 autoCreate=false)"
-// @Param        body            body      dto.CreateReviewForNewStoreRequest true "评价和新店铺信息 (当 autoCreate=true)"
+// @Param        body            body      dto.CreateReviewRequest true  "评价内容"
 // @Success      201             {object}  dto.ReviewResponse "创建成功"
 // @Failure      400             {object}  problem.Details "请求参数错误"
 // @Failure      401             {object}  problem.Details "未认证"
-// @Failure      409             {object}  problem.Details "用户已评价过该店铺"
-// @Failure      429             {object}  problem.Details "请求正在处理中"
-// @Security     ApiKeyAuth
+// @Failure      404             {object}  problem.Details "店铺不存在"
+// @Failure      409             {object}  problem.Details "用户已评价过该店铺或请求正在处理中"
+// @Security     BearerAuth
 // @Router       /stores/{id}/reviews [post]
 func (h *StoreHandler) CreateReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
@@ -185,11 +183,15 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 
 	review, err := h.reviews.Submit(userID, storeID, req)
 	if err != nil {
-		if err.Error() == "user has already reviewed this store" {
-			problem.Conflict("you have already reviewed this store").Send(c)
-			return
+		// Refine error handling based on service layer
+		switch err.Error() {
+		case "user has already reviewed this store":
+			problem.Conflict(err.Error()).Send(c)
+		case "store not found":
+			problem.NotFound(err.Error()).Send(c)
+		default:
+			problem.BadRequest(err.Error()).Send(c)
 		}
-		problem.Conflict(err.Error()).Send(c)
 		return
 	}
 
@@ -210,7 +212,7 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 // @Failure      401        {object}  problem.Details "未认证"
 // @Failure      403        {object}  problem.Details "无权操作"
 // @Failure      404        {object}  problem.Details "评价不存在"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /stores/{id}/reviews/{reviewId} [patch]
 func (h *StoreHandler) UpdateReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
@@ -246,7 +248,7 @@ func (h *StoreHandler) UpdateReview(c *gin.Context) {
 // @Failure      401      {object}  problem.Details "未认证"
 // @Failure      403      {object}  problem.Details "无权操作"
 // @Failure      404      {object}  problem.Details "评价不存在"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /stores/{id}/reviews/{reviewId} [delete]
 func (h *StoreHandler) DeleteReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)

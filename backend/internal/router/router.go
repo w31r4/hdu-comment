@@ -83,15 +83,13 @@ func Register(p Params) {
 	{
 		// 评价管理
 		admin.GET("/reviews/pending", p.AdminHandler.Pending)
-		admin.PUT("/reviews/:id/approve", p.AdminHandler.Approve)
-		admin.PUT("/reviews/:id/reject", p.AdminHandler.Reject)
+		admin.PUT("/reviews/:id/status", p.AdminHandler.UpdateStatus)
 		admin.DELETE("/reviews/:id", p.AdminHandler.Delete)
 
 		// 店铺管理
 		admin.GET("/stores/pending", p.StoreAdminHandler.Pending)
 		admin.POST("/stores", p.StoreAdminHandler.CreateStore)
-		admin.PUT("/stores/:id/approve", p.StoreAdminHandler.Approve)
-		admin.PUT("/stores/:id/reject", p.StoreAdminHandler.Reject)
+		admin.PUT("/stores/:id/status", p.StoreAdminHandler.UpdateStatus)
 		admin.DELETE("/stores/:id", p.StoreAdminHandler.Delete)
 	}
 }

@@ -78,8 +78,8 @@ func (s *ReviewService) CreateReviewForNewStore(ctx context.Context, authorID uu
 
 	err := s.db.Transaction(func(tx *gorm.DB) error {
 		// 1. Find or Create Store
-		normalizedName := strings.TrimSpace(req.StoreName)
-		normalizedAddress := strings.TrimSpace(req.StoreAddress)
+		normalizedName := strings.TrimSpace(req.Store.Name)
+		normalizedAddress := strings.TrimSpace(req.Store.Address)
 
 		existingStore, err := s.stores.FindByNameAndAddress(normalizedName, normalizedAddress)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

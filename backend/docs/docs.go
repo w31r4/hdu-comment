@@ -28,7 +28,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "获取等待管理员审核的点评列表，支持分页、搜索和排序。",
@@ -51,7 +51,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -88,7 +88,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "永久删除指定 ID 的点评及其关联的图片。",
@@ -133,60 +133,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/reviews/{id}/approve": {
+        "/admin/reviews/{id}/status": {
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "将指定 ID 的点评状态标记为“已批准”。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "管理"
-                ],
-                "summary": "批准点评",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "点评 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "批准成功",
-                        "schema": {
-                            "$ref": "#/definitions/models.Review"
-                        }
-                    },
-                    "400": {
-                        "description": "无效的点评 ID 或状态错误",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Details"
-                        }
-                    },
-                    "404": {
-                        "description": "点评不存在",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Details"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/reviews/{id}/reject": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "将指定 ID 的点评状态标记为“已拒绝”，并记录原因。",
+                "description": "批准或拒绝一个点评。",
                 "consumes": [
                     "application/json"
                 ],
@@ -196,7 +150,7 @@ const docTemplate = `{
                 "tags": [
                     "管理"
                 ],
-                "summary": "拒绝点评",
+                "summary": "更新点评状态",
                 "parameters": [
                     {
                         "type": "string",
@@ -206,7 +160,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "拒绝原因",
+                        "description": "状态更新请求 (status: 'approved' 或 'rejected')",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -215,6 +169,9 @@ const docTemplate = `{
                             "properties": {
                                 "reason": {
                                     "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -222,19 +179,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "拒绝成功",
+                        "description": "更新成功",
                         "schema": {
                             "$ref": "#/definitions/models.Review"
                         }
                     },
                     "400": {
-                        "description": "无效的点评 ID 或请求参数错误",
+                        "description": "无效的请求",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "409": {
+                        "description": "点评状态已被处理，无法再次修改",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
@@ -246,7 +209,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "管理员直接创建一个已审核通过的店铺。",
@@ -297,7 +260,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "获取待审核的店铺列表，支持分页。",
@@ -344,7 +307,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "管理员删除指定的店铺（包含关联的评价和图片记录）。",
@@ -377,14 +340,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/stores/{id}/approve": {
+        "/admin/stores/{id}/status": {
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "管理员审核通过指定的店铺。",
+                "description": "管理员批准或拒绝一个店铺。",
                 "consumes": [
                     "application/json"
                 ],
@@ -394,56 +357,7 @@ const docTemplate = `{
                 "tags": [
                     "管理员 - 店铺"
                 ],
-                "summary": "审核通过店铺",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "店铺 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新后的店铺",
-                        "schema": {
-                            "$ref": "#/definitions/models.Store"
-                        }
-                    },
-                    "400": {
-                        "description": "店铺已被处理",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Details"
-                        }
-                    },
-                    "404": {
-                        "description": "店铺不存在",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Details"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/stores/{id}/reject": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "管理员驳回指定的店铺并填写原因。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "管理员 - 店铺"
-                ],
-                "summary": "驳回店铺",
+                "summary": "更新店铺状态",
                 "parameters": [
                     {
                         "type": "string",
@@ -453,7 +367,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "驳回原因",
+                        "description": "状态更新请求 (status: 'approved' 或 'rejected')",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -461,6 +375,9 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "reason": {
+                                    "type": "string"
+                                },
+                                "status": {
                                     "type": "string"
                                 }
                             }
@@ -475,13 +392,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "店铺已被处理",
+                        "description": "无效的请求",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "店铺不存在",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "409": {
+                        "description": "店铺状态已被处理，无法再次修改",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
@@ -546,7 +469,7 @@ const docTemplate = `{
                                             "type": "string"
                                         },
                                         "id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "role": {
                                             "type": "string"
@@ -673,7 +596,7 @@ const docTemplate = `{
                                             "type": "string"
                                         },
                                         "id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "role": {
                                             "type": "string"
@@ -758,7 +681,7 @@ const docTemplate = `{
                                             "type": "string"
                                         },
                                         "id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "role": {
                                             "type": "string"
@@ -805,7 +728,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -840,10 +763,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "创建一个新的评价。如果提供了 ` + "`" + `autoCreateStore=true` + "`" + ` 查询参数，则会在店铺不存在时自动创建店铺。",
+                "description": "创建一个新的评价。如果店铺不存在，则根据提供的店铺信息自动创建。此接口为幂等操作。",
                 "consumes": [
                     "application/json"
                 ],
@@ -853,14 +776,8 @@ const docTemplate = `{
                 "tags": [
                     "点评"
                 ],
-                "summary": "创建新评价",
+                "summary": "创建新评价（可自动创建店铺）",
                 "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "是否在店铺不存在时自动创建",
-                        "name": "autoCreateStore",
-                        "in": "query"
-                    },
                     {
                         "type": "string",
                         "description": "幂等键 (UUID)，用于防止重复提交",
@@ -881,7 +798,7 @@ const docTemplate = `{
                     "201": {
                         "description": "创建成功",
                         "schema": {
-                            "$ref": "#/definitions/dto.ReviewResponse"
+                            "$ref": "#/definitions/dto.AutoCreateReviewResponse"
                         }
                     },
                     "400": {
@@ -897,7 +814,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "用户已评价过该店铺",
+                        "description": "用户已评价过该店铺或请求正在处理中",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
@@ -962,7 +879,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "为指定的点评上传一张图片。用户只能为自己的点评上传。",
@@ -1054,7 +971,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -1095,7 +1012,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "用户创建一个新的店铺，需要等待管理员审核。",
@@ -1212,7 +1129,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -1247,10 +1164,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "为指定店铺提交一条新评价。支持通过 ` + "`" + `?autoCreate=true` + "`" + ` 在评价时自动创建不存在的店铺。该接口支持通过 ` + "`" + `Idempotency-Key` + "`" + ` 请求头实现幂等性。",
+                "description": "为指定 ID 的店铺提交一条新评价。此接口为幂等操作。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1260,20 +1177,14 @@ const docTemplate = `{
                 "tags": [
                     "店铺"
                 ],
-                "summary": "提交店铺评价",
+                "summary": "为店铺提交评价",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "店铺 ID (当 autoCreate=false 时)",
+                        "description": "店铺 ID",
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "boolean",
-                        "description": "是否在店铺不存在时自动创建",
-                        "name": "autoCreate",
-                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -1282,21 +1193,12 @@ const docTemplate = `{
                         "in": "header"
                     },
                     {
-                        "description": "评价内容 (当 autoCreate=false)",
+                        "description": "评价内容",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dto.CreateReviewRequest"
-                        }
-                    },
-                    {
-                        "description": "评价和新店铺信息 (当 autoCreate=true)",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.CreateReviewForNewStoreRequest"
                         }
                     }
                 ],
@@ -1319,14 +1221,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/problem.Details"
                         }
                     },
-                    "409": {
-                        "description": "用户已评价过该店铺",
+                    "404": {
+                        "description": "店铺不存在",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
                     },
-                    "429": {
-                        "description": "请求正在处理中",
+                    "409": {
+                        "description": "用户已评价过该店铺或请求正在处理中",
                         "schema": {
                             "$ref": "#/definitions/problem.Details"
                         }
@@ -1338,7 +1240,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "删除用户对指定店铺的评价。",
@@ -1392,7 +1294,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "更新用户对指定店铺的评价。",
@@ -1469,7 +1371,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "获取当前已认证用户的详细信息。",
@@ -1496,7 +1398,7 @@ const docTemplate = `{
                                     "type": "string"
                                 },
                                 "id": {
-                                    "type": "integer"
+                                    "type": "string"
                                 },
                                 "role": {
                                     "type": "string"
@@ -1523,7 +1425,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "获取当前认证用户提交的所有点评列表，支持分页、搜索和排序。",
@@ -1546,7 +1448,7 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query"
                     },
                     {
@@ -1586,13 +1488,26 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AutoCreateReviewResponse": {
+            "type": "object",
+            "properties": {
+                "is_new_store": {
+                    "type": "boolean"
+                },
+                "review": {
+                    "$ref": "#/definitions/dto.ReviewResponse"
+                },
+                "store": {
+                    "$ref": "#/definitions/dto.StoreResponse"
+                }
+            }
+        },
         "dto.CreateReviewForNewStoreRequest": {
             "type": "object",
             "required": [
                 "content",
                 "rating",
-                "store_address",
-                "store_name",
+                "store",
                 "title"
             ],
             "properties": {
@@ -1604,11 +1519,8 @@ const docTemplate = `{
                     "maximum": 5,
                     "minimum": 0
                 },
-                "store_address": {
-                    "type": "string"
-                },
-                "store_name": {
-                    "type": "string"
+                "store": {
+                    "$ref": "#/definitions/dto.StoreInfoForReview"
                 },
                 "title": {
                     "type": "string"
@@ -1699,6 +1611,21 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StoreInfoForReview": {
+            "type": "object",
+            "required": [
+                "address",
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }

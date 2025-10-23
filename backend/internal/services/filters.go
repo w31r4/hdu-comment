@@ -25,7 +25,7 @@ func ParseListFilters(c *gin.Context) ListFilters {
 	if page <= 0 {
 		page = 1
 	}
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
 	if limit <= 0 {
 		limit = 10
 	}

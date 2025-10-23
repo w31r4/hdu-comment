@@ -25,10 +25,10 @@ func NewUserHandler(users *repository.UserRepository, reviews *services.ReviewSe
 // @Description  获取当前已认证用户的详细信息。
 // @Tags         用户
 // @Produce      json
-// @Success      200 {object} object{id=integer,email=string,display_name=string,role=string,created_at=string} "用户信息"
+// @Success      200 {object} object{id=string,email=string,display_name=string,role=string,created_at=string} "用户信息"
 // @Failure      401 {object} problem.Details "未认证"
 // @Failure      404 {object} problem.Details "用户不存在"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /users/me [get]
 func (h *UserHandler) Me(c *gin.Context) {
 	idVal, exists := c.Get("user_id")
@@ -63,11 +63,11 @@ func (h *UserHandler) Me(c *gin.Context) {
 // @Tags         用户
 // @Produce      json
 // @Param        page      query int    false "页码" default(1)
-// @Param        limit     query int    false "每页数量" default(10)
+// @Param        page_size query int    false "每页数量" default(10)
 // @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
 // @Success      200 {object} services.ReviewListResult
 // @Failure      500 {object} problem.Details "服务器内部错误"
-// @Security     ApiKeyAuth
+// @Security     BearerAuth
 // @Router       /users/me/reviews [get]
 func (h *UserHandler) MyReviews(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
