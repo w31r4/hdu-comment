@@ -151,16 +151,20 @@ func (h *StoreHandler) GetStoreReviews(c *gin.Context) {
 }
 
 // @Summary      提交店铺评价
-// @Description  为指定店铺提交一条新评价。
+// @Description  为指定店铺提交一条新评价。支持通过 `?autoCreate=true` 在评价时自动创建不存在的店铺。该接口支持通过 `Idempotency-Key` 请求头实现幂等性。
 // @Tags         店铺
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string               true "店铺 ID"
-// @Param        body body      dto.CreateReviewRequest true "评价内容"
-// @Success      201  {object}  dto.ReviewResponse "创建成功"
-// @Failure      400  {object}  problem.Details "请求参数错误"
-// @Failure      401  {object}  problem.Details "未认证"
-// @Failure      409  {object}  problem.Details "用户已评价过该店铺"
+// @Param        id              path      string                  true  "店铺 ID (当 autoCreate=false 时)"
+// @Param        autoCreate      query     bool                    false "是否在店铺不存在时自动创建"
+// @Param        Idempotency-Key header    string                  false "幂等键 (UUID)，用于防止重复提交"
+// @Param        body            body      dto.CreateReviewRequest true  "评价内容 (当 autoCreate=false)"
+// @Param        body            body      dto.CreateReviewForNewStoreRequest true "评价和新店铺信息 (当 autoCreate=true)"
+// @Success      201             {object}  dto.ReviewResponse "创建成功"
+// @Failure      400             {object}  problem.Details "请求参数错误"
+// @Failure      401             {object}  problem.Details "未认证"
+// @Failure      409             {object}  problem.Details "用户已评价过该店铺"
+// @Failure      429             {object}  problem.Details "请求正在处理中"
 // @Security     ApiKeyAuth
 // @Router       /stores/{id}/reviews [post]
 func (h *StoreHandler) CreateReview(c *gin.Context) {

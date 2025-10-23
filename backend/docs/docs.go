@@ -93,12 +93,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -135,34 +130,19 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的点评 ID",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -202,23 +182,13 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的点评 ID 或状态错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -275,23 +245,13 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的点评 ID 或请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -336,23 +296,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "409": {
                         "description": "店铺已存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -399,12 +349,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -441,12 +386,7 @@ const docTemplate = `{
                     "404": {
                         "description": "店铺不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -489,23 +429,13 @@ const docTemplate = `{
                     "400": {
                         "description": "店铺已被处理",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "店铺不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -562,23 +492,13 @@ const docTemplate = `{
                     "400": {
                         "description": "店铺已被处理",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "店铺不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -654,23 +574,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "401": {
                         "description": "邮箱或密码错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -712,23 +622,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "401": {
                         "description": "无效的刷新令牌",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -801,23 +701,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "401": {
                         "description": "无效的刷新令牌",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -896,23 +786,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "409": {
                         "description": "邮箱已被占用",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -982,92 +862,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reviews/me": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "获取当前认证用户提交的所有点评列表，支持分页、搜索和排序。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "点评"
-                ],
-                "summary": "我的点评列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "每页数量",
-                        "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "搜索关键词",
-                        "name": "query",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "created_at",
-                            "rating"
-                        ],
-                        "type": "string",
-                        "default": "created_at",
-                        "description": "排序字段 (created_at, rating)",
-                        "name": "sort",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "asc",
-                            "desc"
-                        ],
-                        "type": "string",
-                        "default": "desc",
-                        "description": "排序顺序 (asc, desc)",
-                        "name": "order",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/services.ReviewListResult"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1102,34 +897,19 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的点评 ID",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "403": {
                         "description": "无权访问",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1179,45 +959,25 @@ const docTemplate = `{
                     "400": {
                         "description": "请求错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "403": {
                         "description": "无权操作",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "点评不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1225,7 +985,7 @@ const docTemplate = `{
         },
         "/stores": {
             "get": {
-                "description": "根据名称或地址搜索已审核通过的店铺，支持分页。",
+                "description": "根据多种条件搜索已审核通过的店铺，支持分页、排序和过滤。",
                 "produces": [
                     "application/json"
                 ],
@@ -1236,8 +996,8 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "搜索关键词",
-                        "name": "query",
+                        "description": "搜索关键词 (名称或地址)",
+                        "name": "q",
                         "in": "query"
                     },
                     {
@@ -1251,7 +1011,25 @@ const docTemplate = `{
                         "type": "integer",
                         "default": 10,
                         "description": "每页数量",
-                        "name": "page_size",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段 (e.g., -created_at, average_rating)",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "店铺分类",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "店铺状态 (仅管理员可用)",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -1265,12 +1043,7 @@ const docTemplate = `{
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1313,23 +1086,13 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "409": {
                         "description": "店铺已存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1364,23 +1127,13 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的店铺 ID",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "店铺不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1429,23 +1182,13 @@ const docTemplate = `{
                     "400": {
                         "description": "无效的店铺 ID",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1456,7 +1199,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "为指定店铺提交一条新评价。",
+                "description": "为指定店铺提交一条新评价。支持通过 ` + "`" + `?autoCreate=true` + "`" + ` 在评价时自动创建不存在的店铺。该接口支持通过 ` + "`" + `Idempotency-Key` + "`" + ` 请求头实现幂等性。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1470,18 +1213,39 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "店铺 ID",
+                        "description": "店铺 ID (当 autoCreate=false 时)",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "评价内容",
+                        "type": "boolean",
+                        "description": "是否在店铺不存在时自动创建",
+                        "name": "autoCreate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "幂等键 (UUID)，用于防止重复提交",
+                        "name": "Idempotency-Key",
+                        "in": "header"
+                    },
+                    {
+                        "description": "评价内容 (当 autoCreate=false)",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/dto.CreateReviewRequest"
+                        }
+                    },
+                    {
+                        "description": "评价和新店铺信息 (当 autoCreate=true)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateReviewForNewStoreRequest"
                         }
                     }
                 ],
@@ -1495,41 +1259,86 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "401": {
                         "description": "未认证",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "409": {
                         "description": "用户已评价过该店铺",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "429": {
+                        "description": "请求正在处理中",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
             }
         },
         "/stores/{id}/reviews/{reviewId}": {
-            "put": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除用户对指定店铺的评价。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "店铺"
+                ],
+                "summary": "删除店铺评价",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "店铺 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "评价 ID",
+                        "name": "reviewId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "删除成功"
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    },
+                    "404": {
+                        "description": "评价不存在",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    }
+                }
+            },
+            "patch": {
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -1581,114 +1390,25 @@ const docTemplate = `{
                     "400": {
                         "description": "请求参数错误",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "401": {
                         "description": "未认证",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "403": {
                         "description": "无权操作",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "评价不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "删除用户对指定店铺的评价。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "店铺"
-                ],
-                "summary": "删除店铺评价",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "店铺 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "评价 ID",
-                        "name": "reviewId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "删除成功"
-                    },
-                    "401": {
-                        "description": "未认证",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "无权操作",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "评价不存在",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1736,23 +1456,66 @@ const docTemplate = `{
                     "401": {
                         "description": "未认证",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
                         }
                     },
                     "404": {
                         "description": "用户不存在",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "error": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/problem.Details"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/reviews": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取当前认证用户提交的所有点评列表，支持分页、搜索和排序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户"
+                ],
+                "summary": "我的点评列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段 (e.g., -created_at, rating)",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.ReviewListResult"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Details"
                         }
                     }
                 }
@@ -1767,6 +1530,35 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateReviewForNewStoreRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "rating",
+                "store_address",
+                "store_name",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number",
+                    "maximum": 5,
+                    "minimum": 0
+                },
+                "store_address": {
+                    "type": "string"
+                },
+                "store_name": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -2066,6 +1858,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.Details": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "instance": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }
