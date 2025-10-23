@@ -62,7 +62,7 @@ func (s *StoreService) CreateStore(ctx context.Context, createdBy uuid.UUID, isA
 		CreatedBy:   createdBy,
 	}
 
-	if err := s.stores.Create(store); err != nil {
+	if err := s.stores.Create(nil, store); err != nil {
 		return nil, err
 	}
 	return store, nil

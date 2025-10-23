@@ -22,6 +22,9 @@ type Config struct {
 		AccessTokenTTL  time.Duration
 		RefreshTokenTTL time.Duration
 	}
+	Idempotency struct {
+		TTL time.Duration
+	}
 	Storage struct {
 		Provider      string
 		UploadDir     string
@@ -72,6 +75,12 @@ func Load() (*Config, error) {
 
 	v.SetDefault("ADMIN_EMAIL", "admin@example.com")
 	v.SetDefault("ADMIN_PASSWORD", "adminpassword")
+	v.SetDefault("IDEMPOTENCY_TTL", "24h")
+
+	idempotencyTTL, err := time.ParseDuration(v.GetString("IDEMPOTENCY_TTL"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid IDEMPOTENCY_TTL: %w", err)
+	}
 
 	accessTTL, err := time.ParseDuration(v.GetString("AUTH_ACCESS_TOKEN_TTL"))
 	if err != nil {
@@ -93,6 +102,8 @@ func Load() (*Config, error) {
 	cfg.Auth.JWTSecret = v.GetString("AUTH_JWT_SECRET")
 	cfg.Auth.AccessTokenTTL = accessTTL
 	cfg.Auth.RefreshTokenTTL = refreshTTL
+
+	cfg.Idempotency.TTL = idempotencyTTL
 
 	cfg.Storage.Provider = v.GetString("STORAGE_PROVIDER")
 	cfg.Storage.UploadDir = v.GetString("STORAGE_UPLOAD_DIR")

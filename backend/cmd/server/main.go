@@ -54,6 +54,7 @@ func main() {
 	reviewRepo := repository.NewReviewRepository(db)
 	storeRepo := repository.NewStoreRepository(db)
 	refreshRepo := repository.NewRefreshTokenRepository(db)
+	idempotencyRepo := repository.NewIdempotencyKeyRepository(db)
 
 	storageProvider, err := storage.New(cfg)
 	if err != nil {
@@ -63,20 +64,22 @@ func main() {
 	jwtManager := auth.NewJWTManager(cfg.Auth.JWTSecret, cfg.Auth.AccessTokenTTL)
 
 	authService := services.NewAuthService(userRepo, jwtManager, refreshRepo, cfg.Auth.RefreshTokenTTL)
-	reviewService := services.NewReviewService(reviewRepo, storageProvider, db)
+	reviewService := services.NewReviewService(reviewRepo, storeRepo, storageProvider, db)
 	storeService := services.NewStoreService(storeRepo, reviewRepo, db)
+	idempotencyService := services.NewIdempotencyService(idempotencyRepo, cfg.Idempotency.TTL)
 
 	authHandler := handlers.NewAuthHandler(authService)
-	userHandler := handlers.NewUserHandler(userRepo)
+	userHandler := handlers.NewUserHandler(userRepo, reviewService)
 	reviewHandler := handlers.NewReviewHandler(reviewService)
 	storeHandler := handlers.NewStoreHandler(storeService, reviewService)
 	adminReviewHandler := adminHandlers.NewReviewAdminHandler(reviewService, storeService)
 	storeAdminHandler := adminHandlers.NewStoreAdminHandler(storeService)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
+	idempotencyMiddleware := middleware.Idempotency(idempotencyService)
 
 	engine := gin.New()
-	engine.Use(gin.Logger(), gin.Recovery())
+	engine.Use(gin.Logger(), gin.Recovery(), middleware.ErrorHandler())
 	engine.Use(cors.New(cors.Config{
 		AllowOrigins:  []string{"*"},
 		AllowMethods:  []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -90,15 +93,16 @@ func main() {
 	}
 
 	router.Register(router.Params{
-		Engine:             engine,
-		AuthMiddleware:     authMiddleware,
-		AuthHandler:        authHandler,
-		UserHandler:        userHandler,
-		ReviewHandler:     reviewHandler,
-		StoreHandler:      storeHandler,
-		AdminHandler:      adminReviewHandler,
-		StoreAdminHandler: storeAdminHandler,
-		StaticUploadDir:   staticUploads,
+		Engine:                engine,
+		AuthMiddleware:        authMiddleware,
+		IdempotencyMiddleware: idempotencyMiddleware,
+		AuthHandler:           authHandler,
+		UserHandler:           userHandler,
+		ReviewHandler:         reviewHandler,
+		StoreHandler:          storeHandler,
+		AdminHandler:          adminReviewHandler,
+		StoreAdminHandler:     storeAdminHandler,
+		StaticUploadDir:       staticUploads,
 	})
 
 	if err := engine.Run(":" + cfg.Server.Port); err != nil {

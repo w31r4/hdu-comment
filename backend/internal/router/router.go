@@ -13,9 +13,10 @@ import (
 
 // Params groups dependencies required for routing.
 type Params struct {
-	Engine            *gin.Engine
-	AuthMiddleware    *middleware.AuthMiddleware
-	AuthHandler       *handlers.AuthHandler
+	Engine                *gin.Engine
+	AuthMiddleware        *middleware.AuthMiddleware
+	IdempotencyMiddleware gin.HandlerFunc
+	AuthHandler           *handlers.AuthHandler
 	UserHandler       *handlers.UserHandler
 	ReviewHandler     *handlers.ReviewHandler
 	StoreHandler      *handlers.StoreHandler
@@ -64,7 +65,7 @@ func Register(p Params) {
 		protected.POST("/stores/:id/images", p.StoreHandler.UploadImage) // Placeholder
 
 		// Review
-		protected.POST("/stores/:id/reviews", p.StoreHandler.CreateReview)
+		protected.POST("/stores/:id/reviews", p.IdempotencyMiddleware, p.StoreHandler.CreateReview)
 		protected.PATCH("/stores/:id/reviews/:reviewId", p.StoreHandler.UpdateReview)
 		protected.DELETE("/stores/:id/reviews/:reviewId", p.StoreHandler.DeleteReview)
 		protected.POST("/reviews/:id/images", p.ReviewHandler.UploadImage)

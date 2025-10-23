@@ -1,8 +1,9 @@
 # Go build artifacts
 backend/bin/
-backend/data/
+backend/data/*
 backend/uploads/
 backend/coverage.out
+app.db
 
 # Node/Vite artifacts
 frontend/node_modules/

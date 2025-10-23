@@ -87,3 +87,8 @@ func Forbidden(detail string) *Details {
 func NotImplemented(detail string) *Details {
 	return New(http.StatusNotImplemented, "Not Implemented").WithDetail(detail)
 }
+
+// TooManyRequests creates a 429 Too Many Requests problem.
+func TooManyRequests(detail string) *Details {
+	return New(http.StatusTooManyRequests, "Too Many Requests").WithDetail(detail)
+}

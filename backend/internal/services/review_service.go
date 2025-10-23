@@ -20,13 +20,14 @@ import (
 // ReviewService contains business logic around review workflows.
 type ReviewService struct {
 	reviews *repository.ReviewRepository
+	stores  *repository.StoreRepository
 	storage storage.FileStorage
 	db      *gorm.DB
 }
 
 // NewReviewService constructs a review service instance.
-func NewReviewService(reviews *repository.ReviewRepository, fileStorage storage.FileStorage, db *gorm.DB) *ReviewService {
-	return &ReviewService{reviews: reviews, storage: fileStorage, db: db}
+func NewReviewService(reviews *repository.ReviewRepository, stores *repository.StoreRepository, fileStorage storage.FileStorage, db *gorm.DB) *ReviewService {
+	return &ReviewService{reviews: reviews, stores: stores, storage: fileStorage, db: db}
 }
 
 // Pagination metadata for list responses.
@@ -63,7 +64,7 @@ func (s *ReviewService) Submit(authorID uuid.UUID, storeID uuid.UUID, req dto.Cr
 		AuthorID: authorID,
 	}
 
-	if err := s.reviews.Create(review); err != nil {
+	if err := s.reviews.Create(nil, review); err != nil {
 		return nil, err
 	}
 	// Eager load author and images for the response
@@ -72,24 +73,66 @@ func (s *ReviewService) Submit(authorID uuid.UUID, storeID uuid.UUID, req dto.Cr
 
 // CreateReviewForNewStore creates a new store and a review for it.
 func (s *ReviewService) CreateReviewForNewStore(ctx context.Context, authorID uuid.UUID, req dto.CreateReviewForNewStoreRequest) (*models.Store, *models.Review, error) {
-	// This is a simplified version. In a real app, you'd use a proper store service.
-	store := &models.Store{
-		Name:        req.StoreName,
-		Address:     req.StoreAddress,
-		Status:      models.StoreStatusPending,
-		CreatedBy:   authorID,
-		AutoCreated: true, // Mark as auto-created
-	}
-	if err := s.db.Create(store).Error; err != nil {
+	var store *models.Store
+	var review *models.Review
+
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Find or Create Store
+		normalizedName := strings.TrimSpace(req.StoreName)
+		normalizedAddress := strings.TrimSpace(req.StoreAddress)
+
+		existingStore, err := s.stores.FindByNameAndAddress(normalizedName, normalizedAddress)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		if existingStore != nil {
+			store = existingStore
+		} else {
+			store = &models.Store{
+				Name:        normalizedName,
+				Address:     normalizedAddress,
+				Status:      models.StoreStatusPending,
+				CreatedBy:   authorID,
+				AutoCreated: true,
+			}
+			if err := s.stores.Create(tx, store); err != nil {
+				return err
+			}
+		}
+
+		// 2. Create Review
+		_, err = s.reviews.FindByUserAndStore(authorID, store.ID)
+		if err == nil {
+			return errors.New("user has already reviewed this store")
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+
+		review = &models.Review{
+			StoreID:  store.ID,
+			Title:    req.Title,
+			Content:  req.Content,
+			Rating:   req.Rating,
+			Status:   models.ReviewStatusPending,
+			AuthorID: authorID,
+		}
+
+		if err := s.reviews.Create(tx, review); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, nil, err
 	}
 
-	review, err := s.Submit(authorID, store.ID, req.CreateReviewRequest)
-	if err != nil {
-		// Rollback store creation if review submission fails
-		s.db.Delete(store)
-		return nil, nil, err
-	}
+	// Eager load for response
+	review, _ = s.reviews.FindByID(review.ID)
+	store, _ = s.stores.FindByID(store.ID)
 
 	return store, review, nil
 }

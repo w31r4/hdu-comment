@@ -19,8 +19,12 @@ func NewStoreRepository(db *gorm.DB) *StoreRepository {
 }
 
 // Create inserts a new store entry.
-func (r *StoreRepository) Create(store *models.Store) error {
-	return r.db.Create(store).Error
+func (r *StoreRepository) Create(tx *gorm.DB, store *models.Store) error {
+	db := r.db
+	if tx != nil {
+		db = tx
+	}
+	return db.Create(store).Error
 }
 
 // FindByID returns a store by UUID.

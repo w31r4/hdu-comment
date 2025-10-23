@@ -93,8 +93,12 @@ func (r *ReviewRepository) List(opts ListOptions) (ListResult, error) {
 }
 
 // Create inserts a new review.
-func (r *ReviewRepository) Create(review *models.Review) error {
-	return r.db.Create(review).Error
+func (r *ReviewRepository) Create(tx *gorm.DB, review *models.Review) error {
+	db := r.db
+	if tx != nil {
+		db = tx
+	}
+	return db.Create(review).Error
 }
 
 // Update persists changes to a review.

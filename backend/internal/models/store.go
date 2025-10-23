@@ -19,8 +19,8 @@ const (
 // Store represents a food establishment/shop.
 type Store struct {
 	ID              uuid.UUID   `gorm:"type:char(36);primaryKey" json:"id"`
-	Name            string      `gorm:"size:120;not null;index" json:"name"`
-	Address         string      `gorm:"size:255;not null" json:"address"`
+	Name            string      `gorm:"size:120;not null;uniqueIndex:idx_name_address" json:"name"`
+	Address         string      `gorm:"size:255;not null;uniqueIndex:idx_name_address" json:"address"`
 	Phone           string      `gorm:"size:20" json:"phone"`
 	Category        string      `gorm:"size:50;index" json:"category"`
 	Description     string      `gorm:"type:text" json:"description"`
