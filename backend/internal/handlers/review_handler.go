@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/common/problem"
 	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/models"
 	"github.com/hdu-dp/backend/internal/services"
@@ -33,13 +32,13 @@ func NewReviewHandler(reviews *services.ReviewService) *ReviewHandler {
 // @Param        sort      query string false "排序字段 (created_at, rating)" enums(created_at, rating) default(created_at)
 // @Param        order     query string false "排序顺序 (asc, desc)" enums(asc, desc) default(desc)
 // @Success      200 {object} services.ReviewListResult
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Router       /reviews [get]
 func (h *ReviewHandler) ListPublic(c *gin.Context) {
-	filters := parseListFilters(c)
+	filters := services.ParseListFilters(c)
 	result, err := h.reviews.ListPublic(filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -51,20 +50,20 @@ func (h *ReviewHandler) ListPublic(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "点评 ID"
 // @Success      200 {object} dto.ReviewResponse
-// @Failure      400 {object} object{error=string} "无效的点评 ID"
-// @Failure      403 {object} object{error=string} "无权访问"
-// @Failure      404 {object} object{error=string} "点评不存在"
+// @Failure      400 {object} problem.Details "无效的点评 ID"
+// @Failure      403 {object} problem.Details "无权访问"
+// @Failure      404 {object} problem.Details "点评不存在"
 // @Router       /reviews/{id} [get]
 func (h *ReviewHandler) Detail(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
+		problem.NotFound("review not found").Send(c)
 		return
 	}
 
@@ -78,37 +77,13 @@ func (h *ReviewHandler) Detail(c *gin.Context) {
 			userVal, ok := c.Get("user_id")
 			userID, okID := userVal.(uuid.UUID)
 			if !ok || !okID || review.AuthorID != userID {
-				c.JSON(http.StatusForbidden, gin.H{"error": "review not accessible"})
+				problem.Forbidden("review not accessible").Send(c)
 				return
 			}
 		}
 	}
 
 	c.JSON(http.StatusOK, dto.ToReviewResponse(review))
-}
-
-// @Summary      我的点评列表
-// @Description  获取当前认证用户提交的所有点评列表，支持分页、搜索和排序。
-// @Tags         点评
-// @Produce      json
-// @Param        page      query int    false "页码" default(1)
-// @Param        page_size query int    false "每页数量" default(10)
-// @Param        query     query string false "搜索关键词"
-// @Param        sort      query string false "排序字段 (created_at, rating)" enums(created_at, rating) default(created_at)
-// @Param        order     query string false "排序顺序 (asc, desc)" enums(asc, desc) default(desc)
-// @Success      200 {object} services.ReviewListResult
-// @Failure      500 {object} object{error=string} "服务器内部错误"
-// @Security     ApiKeyAuth
-// @Router       /reviews/me [get]
-func (h *ReviewHandler) MyReviews(c *gin.Context) {
-	userID := c.MustGet("user_id").(uuid.UUID)
-	filters := parseListFilters(c)
-	result, err := h.reviews.ListByAuthor(userID, filters)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, result)
 }
 
 // @Summary      上传点评图片
@@ -119,16 +94,16 @@ func (h *ReviewHandler) MyReviews(c *gin.Context) {
 // @Param        id   path      string true "点评 ID"
 // @Param        file formData  file   true "图片文件"
 // @Success      201  {object}  models.ReviewImage "上传成功"
-// @Failure      400  {object}  object{error=string} "请求错误"
-// @Failure      403  {object}  object{error=string} "无权操作"
-// @Failure      404  {object}  object{error=string} "点评不存在"
-// @Failure      500  {object}  object{error=string} "服务器内部错误"
+// @Failure      400  {object}  problem.Details "请求错误"
+// @Failure      403  {object}  problem.Details "无权操作"
+// @Failure      404  {object}  problem.Details "点评不存在"
+// @Failure      500  {object}  problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth
 // @Router       /reviews/{id}/images [post]
 func (h *ReviewHandler) UploadImage(c *gin.Context) {
 	reviewID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
@@ -137,23 +112,23 @@ func (h *ReviewHandler) UploadImage(c *gin.Context) {
 
 	review, err := h.reviews.Get(reviewID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
+		problem.NotFound("review not found").Send(c)
 		return
 	}
 	if review.AuthorID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not owner"})
+		problem.Forbidden("not owner").Send(c)
 		return
 	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		problem.BadRequest("file is required").Send(c)
 		return
 	}
 
 	opened, err := fileHeader.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 
@@ -166,25 +141,9 @@ func (h *ReviewHandler) UploadImage(c *gin.Context) {
 
 	image, err := h.reviews.StoreImage(c.Request.Context(), reviewID, uploadFile)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 
 	c.JSON(http.StatusCreated, image)
-}
-
-func parseListFilters(c *gin.Context) services.ListFilters {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-	query := strings.TrimSpace(c.Query("query"))
-	sortBy := c.DefaultQuery("sort", "created_at")
-	sortDir := c.DefaultQuery("order", "desc")
-
-	return services.ListFilters{
-		Page:     page,
-		PageSize: pageSize,
-		Query:    query,
-		SortBy:   sortBy,
-		SortDir:  sortDir,
-	}
 }

@@ -2,11 +2,10 @@ package admin
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/common/problem"
 	"github.com/hdu-dp/backend/internal/services"
 )
 
@@ -31,21 +30,14 @@ func NewReviewAdminHandler(reviews *services.ReviewService, stores *services.Sto
 // @Param        sort      query string false "排序字段 (created_at, rating)" enums(created_at, rating) default(created_at)
 // @Param        order     query string false "排序顺序 (asc, desc)" enums(asc, desc) default(desc)
 // @Success      200 {object} services.ReviewListResult
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth
 // @Router       /admin/reviews/pending [get]
 func (h *ReviewAdminHandler) Pending(c *gin.Context) {
-	filters := services.ListFilters{
-		Page:     mustAtoi(c.DefaultQuery("page", "1")),
-		PageSize: mustAtoi(c.DefaultQuery("page_size", "10")),
-		Query:    strings.TrimSpace(c.Query("query")),
-		SortBy:   c.DefaultQuery("sort", "created_at"),
-		SortDir:  c.DefaultQuery("order", "desc"),
-	}
-
+	filters := services.ParseListFilters(c)
 	result, err := h.reviews.ListPending(filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -57,25 +49,25 @@ func (h *ReviewAdminHandler) Pending(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "点评 ID"
 // @Success      200 {object} models.Review "批准成功"
-// @Failure      400 {object} object{error=string} "无效的点评 ID 或状态错误"
-// @Failure      404 {object} object{error=string} "点评不存在"
+// @Failure      400 {object} problem.Details "无效的点评 ID 或状态错误"
+// @Failure      404 {object} problem.Details "点评不存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/reviews/{id}/approve [put]
 func (h *ReviewAdminHandler) Approve(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
+		problem.NotFound("review not found").Send(c)
 		return
 	}
 
 	if err := h.reviews.Approve(review); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
@@ -96,20 +88,20 @@ func (h *ReviewAdminHandler) Approve(c *gin.Context) {
 // @Param        id   path string true "点评 ID"
 // @Param        body body object{reason=string} true "拒绝原因"
 // @Success      200  {object} models.Review "拒绝成功"
-// @Failure      400  {object} object{error=string} "无效的点评 ID 或请求参数错误"
-// @Failure      404  {object} object{error=string} "点评不存在"
+// @Failure      400  {object} problem.Details "无效的点评 ID 或请求参数错误"
+// @Failure      404  {object} problem.Details "点评不存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/reviews/{id}/reject [put]
 func (h *ReviewAdminHandler) Reject(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
+		problem.NotFound("review not found").Send(c)
 		return
 	}
 
@@ -117,12 +109,12 @@ func (h *ReviewAdminHandler) Reject(c *gin.Context) {
 		Reason string `json:"reason"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	if err := h.reviews.Reject(review, req.Reason); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
@@ -135,34 +127,29 @@ func (h *ReviewAdminHandler) Reject(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "点评 ID"
 // @Success      204 "删除成功"
-// @Failure      400 {object} object{error=string} "无效的点评 ID"
-// @Failure      404 {object} object{error=string} "点评不存在"
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      400 {object} problem.Details "无效的点评 ID"
+// @Failure      404 {object} problem.Details "点评不存在"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth
 // @Router       /admin/reviews/{id} [delete]
 func (h *ReviewAdminHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "review not found"})
+		problem.NotFound("review not found").Send(c)
 		return
 	}
 
 	// The Delete service now handles ownership check
 	if err := h.reviews.Delete(c.Request.Context(), review.AuthorID, review.ID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 
 	c.Status(http.StatusNoContent)
-}
-
-func mustAtoi(val string) int {
-	n, _ := strconv.Atoi(val)
-	return n
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hdu-dp/backend/internal/common"
+	"github.com/hdu-dp/backend/internal/common/problem"
 	"github.com/hdu-dp/backend/internal/services"
 )
 
@@ -25,8 +26,8 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 // @Produce      json
 // @Param        body body object{email=string,password=string,display_name=string} true "注册信息"
 // @Success      201  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "注册成功"
-// @Failure      400  {object} object{error=string} "请求参数错误"
-// @Failure      409  {object} object{error=string} "邮箱已被占用"
+// @Failure      400  {object} problem.Details "请求参数错误"
+// @Failure      409  {object} problem.Details "邮箱已被占用"
 // @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req struct {
@@ -36,7 +37,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
@@ -44,9 +45,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case common.ErrEmailAlreadyUsed:
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			problem.Conflict(err.Error()).Send(c)
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			problem.BadRequest(err.Error()).Send(c)
 		}
 		return
 	}
@@ -61,8 +62,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Produce      json
 // @Param        body body object{email=string,password=string} true "登录信息"
 // @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "登录成功"
-// @Failure      400  {object} object{error=string} "请求参数错误"
-// @Failure      401  {object} object{error=string} "邮箱或密码错误"
+// @Failure      400  {object} problem.Details "请求参数错误"
+// @Failure      401  {object} problem.Details "邮箱或密码错误"
 // @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req struct {
@@ -71,7 +72,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
@@ -79,9 +80,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case common.ErrInvalidCredentials:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			problem.Unauthorized(err.Error()).Send(c)
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			problem.BadRequest(err.Error()).Send(c)
 		}
 		return
 	}
@@ -96,15 +97,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce      json
 // @Param        body body object{refresh_token=string} true "刷新令牌"
 // @Success      200  {object} object{access_token=string,refresh_token=string,user=object{id=integer,email=string,display_name=string,role=string,created_at=string}} "刷新成功"
-// @Failure      400  {object} object{error=string} "请求参数错误"
-// @Failure      401  {object} object{error=string} "无效的刷新令牌"
+// @Failure      400  {object} problem.Details "请求参数错误"
+// @Failure      401  {object} problem.Details "无效的刷新令牌"
 // @Router       /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || req.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
@@ -112,9 +113,9 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case common.ErrInvalidRefreshToken:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			problem.Unauthorized(err.Error()).Send(c)
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			problem.BadRequest(err.Error()).Send(c)
 		}
 		return
 	}
@@ -129,24 +130,24 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // @Produce      json
 // @Param        body body object{refresh_token=string} true "刷新令牌"
 // @Success      204 "登出成功"
-// @Failure      400  {object} object{error=string} "请求参数错误"
-// @Failure      401  {object} object{error=string} "无效的刷新令牌"
+// @Failure      400  {object} problem.Details "请求参数错误"
+// @Failure      401  {object} problem.Details "无效的刷新令牌"
 // @Router       /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil || req.RefreshToken == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	if err := h.authService.Logout(req.RefreshToken); err != nil {
 		switch err {
 		case common.ErrInvalidRefreshToken:
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			problem.Unauthorized(err.Error()).Send(c)
 		default:
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			problem.BadRequest(err.Error()).Send(c)
 		}
 		return
 	}

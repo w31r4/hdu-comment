@@ -29,6 +29,7 @@ func Register(p Params) {
 	p.Engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := p.Engine.Group("/api/v1")
+	api.Use(middleware.ErrorHandler())
 
 	auth := api.Group("/auth")
 	{
@@ -55,16 +56,22 @@ func Register(p Params) {
 	{
 		// User
 		protected.GET("/users/me", p.UserHandler.Me)
-		protected.GET("/reviews/me", p.ReviewHandler.MyReviews)
+		protected.GET("/users/me/reviews", p.UserHandler.MyReviews)
 
 		// Store
 		protected.POST("/stores", p.StoreHandler.CreateStore)
 
+		protected.POST("/stores/:id/images", p.StoreHandler.UploadImage) // Placeholder
+
 		// Review
 		protected.POST("/stores/:id/reviews", p.StoreHandler.CreateReview)
-		protected.PUT("/stores/:id/reviews/:reviewId", p.StoreHandler.UpdateReview)
+		protected.PATCH("/stores/:id/reviews/:reviewId", p.StoreHandler.UpdateReview)
 		protected.DELETE("/stores/:id/reviews/:reviewId", p.StoreHandler.DeleteReview)
 		protected.POST("/reviews/:id/images", p.ReviewHandler.UploadImage)
+
+		// Store Analytics (Placeholders)
+		api.GET("/stores/:id/summary", p.StoreHandler.GetSummary)
+		api.GET("/stores/:id/reviews/trend", p.StoreHandler.GetTrend)
 	}
 
 	// 管理员接口

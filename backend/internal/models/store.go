@@ -31,7 +31,8 @@ type Store struct {
 	CreatedBy       uuid.UUID   `gorm:"type:char(36);not null" json:"created_by"`
 	AutoCreated     bool        `gorm:"default:false" json:"auto_created"`
 	CreatedAt       time.Time   `json:"created_at"`
-	UpdatedAt       time.Time   `json:"updated_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // BeforeCreate assigns a UUID if empty.

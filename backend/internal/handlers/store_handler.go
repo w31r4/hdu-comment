@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/common/problem"
 	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/models"
 	"github.com/hdu-dp/backend/internal/services"
@@ -23,23 +23,31 @@ func NewStoreHandler(stores *services.StoreService, reviews *services.ReviewServ
 }
 
 // @Summary      搜索店铺
-// @Description  根据名称或地址搜索已审核通过的店铺，支持分页。
+// @Description  根据多种条件搜索已审核通过的店铺，支持分页、排序和过滤。
 // @Tags         店铺
 // @Produce      json
-// @Param        query     query string false "搜索关键词"
-// @Param        page      query int    false "页码" default(1)
-// @Param        page_size query int    false "每页数量" default(10)
+// @Param        q        query string false "搜索关键词 (名称或地址)"
+// @Param        page     query int    false "页码" default(1)
+// @Param        limit    query int    false "每页数量" default(10)
+// @Param        sort     query string false "排序字段 (e.g., -created_at, average_rating)"
+// @Param        category query string false "店铺分类"
+// @Param        status   query string false "店铺状态 (仅管理员可用)"
 // @Success      200 {object} services.StoreListResult
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Router       /stores [get]
 func (h *StoreHandler) SearchStores(c *gin.Context) {
-	query := c.Query("query")
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
+	// 统一从 ListFilters 解析
+	filters := services.ParseListFilters(c)
 
-	result, err := h.stores.ListApproved(page, pageSize, query)
+	// 允许管理员按状态查询
+	role, _ := c.Get("role")
+	if role != "admin" {
+		filters.Status = string(models.StoreStatusApproved)
+	}
+
+	result, err := h.stores.ListStores(filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -51,19 +59,19 @@ func (h *StoreHandler) SearchStores(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "店铺 ID"
 // @Success      200 {object} dto.StoreResponse "店铺详情"
-// @Failure      400 {object} object{error=string} "无效的店铺 ID"
-// @Failure      404 {object} object{error=string} "店铺不存在"
+// @Failure      400 {object} problem.Details "无效的店铺 ID"
+// @Failure      404 {object} problem.Details "店铺不存在"
 // @Router       /stores/{id} [get]
 func (h *StoreHandler) GetStore(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
 	store, err := h.stores.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "store not found"})
+		problem.NotFound("store not found").Send(c)
 		return
 	}
 
@@ -72,7 +80,7 @@ func (h *StoreHandler) GetStore(c *gin.Context) {
 		// 如果是管理员，可以查看
 		role, _ := c.Get("role")
 		if role != "admin" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "store not found"})
+			problem.NotFound("store not found").Send(c)
 			return
 		}
 	}
@@ -87,8 +95,8 @@ func (h *StoreHandler) GetStore(c *gin.Context) {
 // @Produce      json
 // @Param        body body dto.CreateStoreRequest true "店铺信息"
 // @Success      201 {object} dto.StoreResponse "创建成功"
-// @Failure      400 {object} object{error=string} "请求参数错误"
-// @Failure      409 {object} object{error=string} "店铺已存在"
+// @Failure      400 {object} problem.Details "请求参数错误"
+// @Failure      409 {object} problem.Details "店铺已存在"
 // @Security     ApiKeyAuth
 // @Router       /stores [post]
 func (h *StoreHandler) CreateStore(c *gin.Context) {
@@ -96,20 +104,21 @@ func (h *StoreHandler) CreateStore(c *gin.Context) {
 
 	var req dto.CreateStoreRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	store, err := h.stores.CreateStore(c.Request.Context(), userID, false, req)
 	if err != nil {
 		if err.Error() == "store already exists" {
-			c.JSON(http.StatusConflict, gin.H{"error": "该店铺已存在，请直接评价"})
+			problem.Conflict("该店铺已存在，请直接评价").Send(c)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
+	c.Header("Location", "/api/v1/stores/"+store.ID.String())
 	c.JSON(http.StatusCreated, dto.ToStoreResponse(store))
 }
 
@@ -121,20 +130,20 @@ func (h *StoreHandler) CreateStore(c *gin.Context) {
 // @Param        page      query     int    false "页码" default(1)
 // @Param        page_size query     int    false "每页数量" default(10)
 // @Success      200 {object} services.ReviewListResult
-// @Failure      400 {object} object{error=string} "无效的店铺 ID"
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      400 {object} problem.Details "无效的店铺 ID"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Router       /stores/{id}/reviews [get]
 func (h *StoreHandler) GetStoreReviews(c *gin.Context) {
 	storeID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
-	filters := parseListFilters(c)
+	filters := services.ParseListFilters(c)
 	result, err := h.reviews.ListByStore(storeID, filters)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 
@@ -149,9 +158,9 @@ func (h *StoreHandler) GetStoreReviews(c *gin.Context) {
 // @Param        id   path      string               true "店铺 ID"
 // @Param        body body      dto.CreateReviewRequest true "评价内容"
 // @Success      201  {object}  dto.ReviewResponse "创建成功"
-// @Failure      400  {object}  object{error=string} "请求参数错误"
-// @Failure      401  {object}  object{error=string} "未认证"
-// @Failure      409  {object}  object{error=string} "用户已评价过该店铺"
+// @Failure      400  {object}  problem.Details "请求参数错误"
+// @Failure      401  {object}  problem.Details "未认证"
+// @Failure      409  {object}  problem.Details "用户已评价过该店铺"
 // @Security     ApiKeyAuth
 // @Router       /stores/{id}/reviews [post]
 func (h *StoreHandler) CreateReview(c *gin.Context) {
@@ -161,14 +170,15 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 	if autoCreate {
 		var req dto.CreateReviewForNewStoreRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload for auto-create"})
+			problem.BadRequest("invalid payload for auto-create").Send(c)
 			return
 		}
 		store, review, err := h.reviews.CreateReviewForNewStore(c.Request.Context(), userID, req)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			problem.BadRequest(err.Error()).Send(c)
 			return
 		}
+		c.Header("Location", "/api/v1/reviews/"+review.ID.String())
 		c.JSON(http.StatusCreated, gin.H{
 			"store":        dto.ToStoreResponse(store),
 			"review":       dto.ToReviewResponse(review),
@@ -179,26 +189,27 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 
 	storeID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
 	var req dto.CreateReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Submit(userID, storeID, req)
 	if err != nil {
 		if err.Error() == "user has already reviewed this store" {
-			c.JSON(http.StatusConflict, gin.H{"error": "you have already reviewed this store"})
+			problem.Conflict("you have already reviewed this store").Send(c)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.Conflict(err.Error()).Send(c)
 		return
 	}
 
+	c.Header("Location", "/api/v1/reviews/"+review.ID.String())
 	c.JSON(http.StatusCreated, gin.H{
 		"review":       dto.ToReviewResponse(review),
 		"is_new_store": false,
@@ -214,30 +225,30 @@ func (h *StoreHandler) CreateReview(c *gin.Context) {
 // @Param        reviewId   path      string                  true "评价 ID"
 // @Param        body       body      dto.UpdateReviewRequest true "要更新的评价内容"
 // @Success      200        {object}  dto.ReviewResponse "更新成功"
-// @Failure      400        {object}  object{error=string} "请求参数错误"
-// @Failure      401        {object}  object{error=string} "未认证"
-// @Failure      403        {object}  object{error=string} "无权操作"
-// @Failure      404        {object}  object{error=string} "评价不存在"
+// @Failure      400        {object}  problem.Details "请求参数错误"
+// @Failure      401        {object}  problem.Details "未认证"
+// @Failure      403        {object}  problem.Details "无权操作"
+// @Failure      404        {object}  problem.Details "评价不存在"
 // @Security     ApiKeyAuth
-// @Router       /stores/{id}/reviews/{reviewId} [put]
+// @Router       /stores/{id}/reviews/{reviewId} [patch]
 func (h *StoreHandler) UpdateReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
 	reviewID, err := uuid.Parse(c.Param("reviewId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	var req dto.UpdateReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	review, err := h.reviews.Update(c.Request.Context(), userID, reviewID, req)
 	if err != nil {
 		// TODO: More specific error handling
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
@@ -251,25 +262,40 @@ func (h *StoreHandler) UpdateReview(c *gin.Context) {
 // @Param        id       path      string true "店铺 ID"
 // @Param        reviewId path      string true "评价 ID"
 // @Success      204      "删除成功"
-// @Failure      401      {object}  object{error=string} "未认证"
-// @Failure      403      {object}  object{error=string} "无权操作"
-// @Failure      404      {object}  object{error=string} "评价不存在"
+// @Failure      401      {object}  problem.Details "未认证"
+// @Failure      403      {object}  problem.Details "无权操作"
+// @Failure      404      {object}  problem.Details "评价不存在"
 // @Security     ApiKeyAuth
 // @Router       /stores/{id}/reviews/{reviewId} [delete]
 func (h *StoreHandler) DeleteReview(c *gin.Context) {
 	userID := c.MustGet("user_id").(uuid.UUID)
 	reviewID, err := uuid.Parse(c.Param("reviewId"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid review id"})
+		problem.BadRequest("invalid review id").Send(c)
 		return
 	}
 
 	err = h.reviews.Delete(c.Request.Context(), userID, reviewID)
 	if err != nil {
 		// TODO: More specific error handling
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// GetSummary is a placeholder for store summary analytics.
+func (h *StoreHandler) GetSummary(c *gin.Context) {
+	problem.NotImplemented("not implemented").Send(c)
+}
+
+// GetTrend is a placeholder for store review trend analytics.
+func (h *StoreHandler) GetTrend(c *gin.Context) {
+	problem.NotImplemented("not implemented").Send(c)
+}
+
+// UploadImage is a placeholder for uploading store images.
+func (h *StoreHandler) UploadImage(c *gin.Context) {
+	problem.NotImplemented("not implemented").Send(c)
 }

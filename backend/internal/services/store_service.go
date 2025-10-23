@@ -68,28 +68,36 @@ func (s *StoreService) CreateStore(ctx context.Context, createdBy uuid.UUID, isA
 	return store, nil
 }
 
-// ListApproved returns approved stores with pagination.
-func (s *StoreService) ListApproved(page, pageSize int, query string) (StoreListResult, error) {
-	if page <= 0 {
-		page = 1
-	}
-	if pageSize <= 0 {
-		pageSize = 10
-	}
-	offset := (page - 1) * pageSize
+// ListStores returns stores based on filters.
+func (s *StoreService) ListStores(filters ListFilters) (StoreListResult, error) {
+	offset := (filters.Page - 1) * filters.PageSize
 
-	stores, total, err := s.stores.SearchStores(query, []models.StoreStatus{models.StoreStatusApproved}, pageSize, offset)
+	// Convert status string to model type
+	var statuses []models.StoreStatus
+	if filters.Status != "" {
+		statuses = []models.StoreStatus{models.StoreStatus(filters.Status)}
+	}
+
+	stores, total, err := s.stores.SearchStores(repository.StoreSearchFilters{
+		Query:    filters.Query,
+		Statuses: statuses,
+		Category: filters.Category,
+		SortBy:   filters.SortBy,
+		SortDir:  filters.SortDir,
+		Limit:    filters.PageSize,
+		Offset:   offset,
+	})
 	if err != nil {
 		return StoreListResult{}, err
 	}
 
-	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	totalPages := int((total + int64(filters.PageSize) - 1) / int64(filters.PageSize))
 
 	return StoreListResult{
 		Data: dto.ToStoreListResponse(stores),
 		Pagination: Pagination{
-			Page:       page,
-			PageSize:   pageSize,
+			Page:       filters.Page,
+			PageSize:   filters.PageSize,
 			Total:      total,
 			TotalPages: totalPages,
 		},
@@ -131,6 +139,9 @@ func (s *StoreService) Get(id uuid.UUID) (*models.Store, error) {
 
 // Approve marks a store as approved.
 func (s *StoreService) Approve(store *models.Store) error {
+	if store.Status == models.StoreStatusApproved {
+		return nil // Already approved, idempotent success
+	}
 	if store.Status != models.StoreStatusPending {
 		return fmt.Errorf("store already processed")
 	}
@@ -141,6 +152,9 @@ func (s *StoreService) Approve(store *models.Store) error {
 
 // Reject marks a store as rejected with reason.
 func (s *StoreService) Reject(store *models.Store, reason string) error {
+	if store.Status == models.StoreStatusRejected {
+		return nil // Already rejected, idempotent success
+	}
 	if store.Status != models.StoreStatusPending {
 		return fmt.Errorf("store already processed")
 	}

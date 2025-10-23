@@ -2,10 +2,10 @@ package admin
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hdu-dp/backend/internal/common/problem"
 	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/services"
 )
@@ -27,16 +27,14 @@ func NewStoreAdminHandler(stores *services.StoreService) *StoreAdminHandler {
 // @Param        page      query int    false "页码" default(1)
 // @Param        page_size query int    false "每页数量" default(10)
 // @Success      200 {object} services.StoreListResult
-// @Failure      500 {object} object{error=string} "服务器内部错误"
+// @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     ApiKeyAuth
 // @Router       /admin/stores/pending [get]
 func (h *StoreAdminHandler) Pending(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "10"))
-
-	result, err := h.stores.ListPending(page, pageSize)
+	filters := services.ParseListFilters(c)
+	result, err := h.stores.ListPending(filters.Page, filters.PageSize)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 	c.JSON(http.StatusOK, result)
@@ -49,25 +47,25 @@ func (h *StoreAdminHandler) Pending(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "店铺 ID"
 // @Success      200 {object} models.Store "更新后的店铺"
-// @Failure      400 {object} object{error=string} "店铺已被处理"
-// @Failure      404 {object} object{error=string} "店铺不存在"
+// @Failure      400 {object} problem.Details "店铺已被处理"
+// @Failure      404 {object} problem.Details "店铺不存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/stores/{id}/approve [put]
 func (h *StoreAdminHandler) Approve(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
 	store, err := h.stores.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "store not found"})
+		problem.NotFound("store not found").Send(c)
 		return
 	}
 
 	if err := h.stores.Approve(store); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
@@ -82,14 +80,14 @@ func (h *StoreAdminHandler) Approve(c *gin.Context) {
 // @Param        id   path string true "店铺 ID"
 // @Param        body body object{reason=string} true "驳回原因"
 // @Success      200 {object} models.Store "更新后的店铺"
-// @Failure      400 {object} object{error=string} "店铺已被处理"
-// @Failure      404 {object} object{error=string} "店铺不存在"
+// @Failure      400 {object} problem.Details "店铺已被处理"
+// @Failure      404 {object} problem.Details "店铺不存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/stores/{id}/reject [put]
 func (h *StoreAdminHandler) Reject(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
@@ -97,18 +95,18 @@ func (h *StoreAdminHandler) Reject(c *gin.Context) {
 		Reason string `json:"reason" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "reason is required"})
+		problem.BadRequest("reason is required").Send(c)
 		return
 	}
 
 	store, err := h.stores.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "store not found"})
+		problem.NotFound("store not found").Send(c)
 		return
 	}
 
 	if err := h.stores.Reject(store, req.Reason); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
@@ -121,24 +119,24 @@ func (h *StoreAdminHandler) Reject(c *gin.Context) {
 // @Produce      json
 // @Param        id path string true "店铺 ID"
 // @Success      204 "删除成功"
-// @Failure      404 {object} object{error=string} "店铺不存在"
+// @Failure      404 {object} problem.Details "店铺不存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/stores/{id} [delete]
 func (h *StoreAdminHandler) Delete(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid store id"})
+		problem.BadRequest("invalid store id").Send(c)
 		return
 	}
 
 	store, err := h.stores.Get(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "store not found"})
+		problem.NotFound("store not found").Send(c)
 		return
 	}
 
 	if err := h.stores.DeleteStore(store.ID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		problem.InternalServerError(err.Error()).Send(c)
 		return
 	}
 
@@ -152,8 +150,8 @@ func (h *StoreAdminHandler) Delete(c *gin.Context) {
 // @Produce      json
 // @Param        body body dto.CreateStoreRequest true "店铺信息"
 // @Success      201 {object} dto.StoreResponse "创建成功"
-// @Failure      400 {object} object{error=string} "请求参数错误"
-// @Failure      409 {object} object{error=string} "店铺已存在"
+// @Failure      400 {object} problem.Details "请求参数错误"
+// @Failure      409 {object} problem.Details "店铺已存在"
 // @Security     ApiKeyAuth
 // @Router       /admin/stores [post]
 func (h *StoreAdminHandler) CreateStore(c *gin.Context) {
@@ -161,19 +159,20 @@ func (h *StoreAdminHandler) CreateStore(c *gin.Context) {
 
 	var req dto.CreateStoreRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		problem.BadRequest("invalid payload").Send(c)
 		return
 	}
 
 	store, err := h.stores.CreateStore(c.Request.Context(), userID, true, req)
 	if err != nil {
 		if err.Error() == "store already exists" {
-			c.JSON(http.StatusConflict, gin.H{"error": "该店铺已存在"})
+			problem.Conflict("该店铺已存在").Send(c)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		problem.BadRequest(err.Error()).Send(c)
 		return
 	}
 
+	c.Header("Location", "/api/v1/stores/"+store.ID.String())
 	c.JSON(http.StatusCreated, dto.ToStoreResponse(store))
 }

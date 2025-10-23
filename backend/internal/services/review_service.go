@@ -29,16 +29,6 @@ func NewReviewService(reviews *repository.ReviewRepository, fileStorage storage.
 	return &ReviewService{reviews: reviews, storage: fileStorage, db: db}
 }
 
-// ListFilters describes filters sortable/paginatable lists.
-type ListFilters struct {
-	Page     int
-	PageSize int
-	Query    string
-	SortBy   string
-	SortDir  string
-	StoreID  *uuid.UUID
-}
-
 // Pagination metadata for list responses.
 type Pagination struct {
 	Page       int   `json:"page"`
@@ -108,7 +98,12 @@ func (s *ReviewService) CreateReviewForNewStore(ctx context.Context, authorID uu
 func (s *ReviewService) ListPublic(filters ListFilters) (ReviewListResult, error) {
 	opts := buildListOptions(filters)
 	opts.Statuses = []models.ReviewStatus{models.ReviewStatusApproved}
-	opts.StoreID = filters.StoreID
+	if filters.StoreID != "" {
+		storeID, err := uuid.Parse(filters.StoreID)
+		if err == nil {
+			opts.StoreID = &storeID
+		}
+	}
 	return s.listWithPagination(opts, filters)
 }
 
@@ -135,23 +130,28 @@ func (s *ReviewService) ListPending(filters ListFilters) (ReviewListResult, erro
 }
 
 func buildListOptions(filters ListFilters) repository.ListOptions {
-	limit := filters.PageSize
-	if limit <= 0 {
-		limit = 10
-	}
-	page := filters.Page
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * limit
+	offset := (filters.Page - 1) * filters.PageSize
 
-	return repository.ListOptions{
+	opts := repository.ListOptions{
 		Query:   filters.Query,
 		SortBy:  filters.SortBy,
 		SortDir: filters.SortDir,
-		Limit:   limit,
+		Limit:   filters.PageSize,
 		Offset:  offset,
 	}
+
+	if filters.StoreID != "" {
+		if storeID, err := uuid.Parse(filters.StoreID); err == nil {
+			opts.StoreID = &storeID
+		}
+	}
+	if filters.UserID != "" {
+		if userID, err := uuid.Parse(filters.UserID); err == nil {
+			opts.AuthorID = &userID
+		}
+	}
+
+	return opts
 }
 
 func (s *ReviewService) listWithPagination(opts repository.ListOptions, filters ListFilters) (ReviewListResult, error) {
@@ -223,6 +223,9 @@ func (s *ReviewService) Update(ctx context.Context, userID, reviewID uuid.UUID, 
 
 // Approve marks a review as approved.
 func (s *ReviewService) Approve(review *models.Review) error {
+	if review.Status == models.ReviewStatusApproved {
+		return nil // Already approved, idempotent success
+	}
 	if review.Status != models.ReviewStatusPending {
 		return common.ErrReviewAlreadyProcessed
 	}
@@ -233,6 +236,9 @@ func (s *ReviewService) Approve(review *models.Review) error {
 
 // Reject marks a review as rejected with reason.
 func (s *ReviewService) Reject(review *models.Review, reason string) error {
+	if review.Status == models.ReviewStatusRejected {
+		return nil // Already rejected, idempotent success
+	}
 	if review.Status != models.ReviewStatusPending {
 		return common.ErrReviewAlreadyProcessed
 	}

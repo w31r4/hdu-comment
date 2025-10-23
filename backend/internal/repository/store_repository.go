@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/hdu-dp/backend/internal/models"
 	"gorm.io/gorm"
@@ -64,19 +66,32 @@ func (r *StoreRepository) ListByStatus(statuses []models.StoreStatus, limit, off
 	return stores, total, nil
 }
 
-// SearchStores searches stores by name or address.
-func (r *StoreRepository) SearchStores(query string, statuses []models.StoreStatus, limit, offset int) ([]models.Store, int64, error) {
+// StoreSearchFilters holds all possible filters for searching stores.
+type StoreSearchFilters struct {
+	Query    string
+	Statuses []models.StoreStatus
+	Category string
+	SortBy   string
+	SortDir  string
+	Limit    int
+	Offset   int
+}
+
+// SearchStores searches stores by various filters.
+func (r *StoreRepository) SearchStores(filters StoreSearchFilters) ([]models.Store, int64, error) {
 	var stores []models.Store
 	var total int64
 
 	base := r.db.Model(&models.Store{})
 
-	if len(statuses) > 0 {
-		base = base.Where("status IN ?", statuses)
+	if len(filters.Statuses) > 0 {
+		base = base.Where("status IN ?", filters.Statuses)
 	}
-
-	if query != "" {
-		likeQuery := "%" + query + "%"
+	if filters.Category != "" {
+		base = base.Where("category = ?", filters.Category)
+	}
+	if filters.Query != "" {
+		likeQuery := "%" + filters.Query + "%"
 		base = base.Where("name LIKE ? OR address LIKE ?", likeQuery, likeQuery)
 	}
 
@@ -85,8 +100,22 @@ func (r *StoreRepository) SearchStores(query string, statuses []models.StoreStat
 		return nil, 0, err
 	}
 
+	// Sorting
+	order := "created_at DESC" // Default order
+	if filters.SortBy != "" {
+		// Basic validation to prevent SQL injection
+		switch filters.SortBy {
+		case "created_at", "average_rating":
+			dir := "DESC"
+			if strings.ToUpper(filters.SortDir) == "ASC" {
+				dir = "ASC"
+			}
+			order = filters.SortBy + " " + dir
+		}
+	}
+
 	// Get paginated results
-	queryDB := base.Limit(limit).Offset(offset).Order("created_at DESC")
+	queryDB := base.Limit(filters.Limit).Offset(filters.Offset).Order(order)
 	if err := queryDB.Find(&stores).Error; err != nil {
 		return nil, 0, err
 	}
