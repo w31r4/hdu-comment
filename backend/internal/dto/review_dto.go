@@ -13,16 +13,24 @@ type AuthorResponse struct {
 	DisplayName string    `json:"display_name"`
 }
 
+// StoreSummaryResponse is a simplified DTO for store information within a review.
+type StoreSummaryResponse struct {
+	ID      uuid.UUID `json:"id"`
+	Name    string    `json:"name"`
+	Address string    `json:"address"`
+}
+
 // ReviewResponse is the DTO for a single review response.
 type ReviewResponse struct {
-	ID        uuid.UUID       `json:"id"`
-	Author    AuthorResponse  `json:"author"`
-	Title     string          `json:"title"`
-	Content   string          `json:"content"`
-	Rating    float32         `json:"rating"`
-	Images    []ImageResponse `json:"images"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID        uuid.UUID            `json:"id"`
+	Author    AuthorResponse       `json:"author"`
+	Store     StoreSummaryResponse `json:"store"`
+	Title     string               `json:"title"`
+	Content   string               `json:"content"`
+	Rating    float32              `json:"rating"`
+	Images    []ImageResponse      `json:"images"`
+	CreatedAt time.Time            `json:"created_at"`
+	UpdatedAt time.Time            `json:"updated_at"`
 }
 
 // ImageResponse is the DTO for a review image.
@@ -69,6 +77,11 @@ func ToReviewResponse(review *models.Review) ReviewResponse {
 		Author: AuthorResponse{
 			ID:          review.Author.ID,
 			DisplayName: review.Author.DisplayName,
+		},
+		Store: StoreSummaryResponse{
+			ID:      review.Store.ID,
+			Name:    review.Store.Name,
+			Address: review.Store.Address,
 		},
 		Title:     review.Title,
 		Content:   review.Content,

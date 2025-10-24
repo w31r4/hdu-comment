@@ -1386,24 +1386,7 @@ const docTemplate = `{
                     "200": {
                         "description": "用户信息",
                         "schema": {
-                            "type": "object",
-                            "properties": {
-                                "created_at": {
-                                    "type": "string"
-                                },
-                                "display_name": {
-                                    "type": "string"
-                                },
-                                "email": {
-                                    "type": "string"
-                                },
-                                "id": {
-                                    "type": "string"
-                                },
-                                "role": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "401": {
@@ -1463,7 +1446,22 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/services.ReviewListResult"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/services.ReviewListResult"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.ReviewResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
@@ -1607,6 +1605,9 @@ const docTemplate = `{
                 "rating": {
                     "type": "number"
                 },
+                "store": {
+                    "$ref": "#/definitions/dto.StoreSummaryResponse"
+                },
                 "title": {
                     "type": "string"
                 },
@@ -1662,6 +1663,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.StoreSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UpdateReviewRequest": {
             "type": "object",
             "properties": {
@@ -1674,6 +1689,23 @@ const docTemplate = `{
                     "minimum": 0
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }

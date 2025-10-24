@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/hdu-dp/backend/internal/common/problem"
+	"github.com/hdu-dp/backend/internal/dto"
 	"github.com/hdu-dp/backend/internal/repository"
 	"github.com/hdu-dp/backend/internal/services"
 )
@@ -25,7 +26,7 @@ func NewUserHandler(users *repository.UserRepository, reviews *services.ReviewSe
 // @Description  获取当前已认证用户的详细信息。
 // @Tags         用户
 // @Produce      json
-// @Success      200 {object} object{id=string,email=string,display_name=string,role=string,created_at=string} "用户信息"
+// @Success      200 {object} dto.UserResponse "用户信息"
 // @Failure      401 {object} problem.Details "未认证"
 // @Failure      404 {object} problem.Details "用户不存在"
 // @Security     BearerAuth
@@ -49,13 +50,7 @@ func (h *UserHandler) Me(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":           user.ID,
-		"email":        user.Email,
-		"display_name": user.DisplayName,
-		"role":         user.Role,
-		"created_at":   user.CreatedAt,
-	})
+	c.JSON(http.StatusOK, dto.ToUserResponse(user))
 }
 
 // @Summary      我的点评列表
@@ -65,7 +60,7 @@ func (h *UserHandler) Me(c *gin.Context) {
 // @Param        page      query int    false "页码" default(1)
 // @Param        page_size query int    false "每页数量" default(10)
 // @Param        sort      query string false "排序字段 (e.g., -created_at, rating)" default(-created_at)
-// @Success      200 {object} services.ReviewListResult
+// @Success      200 {object} services.ReviewListResult{data=[]dto.ReviewResponse}
 // @Failure      500 {object} problem.Details "服务器内部错误"
 // @Security     BearerAuth
 // @Router       /users/me/reviews [get]

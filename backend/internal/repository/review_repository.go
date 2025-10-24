@@ -59,7 +59,7 @@ func (r *ReviewRepository) List(opts ListOptions) (ListResult, error) {
 		return ListResult{}, err
 	}
 
-	listQuery := base.Session(&gorm.Session{}).Preload("Images").Preload("Author")
+	listQuery := base.Session(&gorm.Session{}).Preload("Images").Preload("Author").Preload("Store")
 
 	order := "created_at DESC" // Default order
 	if opts.Sort != "" {
