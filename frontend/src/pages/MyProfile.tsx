@@ -50,7 +50,6 @@ const MyProfile = () => {
             <Title level={2} style={{ marginBottom: '24px' }}>个人主页</Title>
             <Card>
                 <Descriptions bordered column={1}>
-                    <Descriptions.Item label="用户ID">{profile.id}</Descriptions.Item>
                     <Descriptions.Item label="昵称">{profile.display_name}</Descriptions.Item>
                     <Descriptions.Item label="邮箱">{profile.email}</Descriptions.Item>
                     <Descriptions.Item label="角色">{profile.role}</Descriptions.Item>

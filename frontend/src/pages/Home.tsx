@@ -1,39 +1,37 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, Col, Empty, Input, List, Modal, Row, Select, Space, Spin, Typography, message } from 'antd';
+import { Button, Card, Col, Empty, Input, List, Row, Select, Space, Spin, Typography, Rate } from 'antd';
 import { Link } from 'react-router-dom';
-import { adminDeleteReview, fetchReviews } from '../api/client';
-import type { PaginatedResponse, Review } from '../types';
-import { useAuth } from '../hooks/useAuth';
+import { searchStores } from '../api/client';
+import type { PaginatedResponse, Store } from '../types';
 
 const { Title, Paragraph, Text } = Typography;
 
 const Home = () => {
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'created_at' | 'rating'>('created_at');
-  const [meta, setMeta] = useState<PaginatedResponse<Review>['pagination'] | null>(null);
-  const { user } = useAuth();
+  const [sort, setSort] = useState<string>('created_at');
+  const [meta, setMeta] = useState<PaginatedResponse<Store>['pagination'] | null>(null);
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchReviews({
+      const data = await searchStores({
         page,
         page_size: pageSize,
         query: query || undefined,
         sort,
-        order: sort === 'rating' ? 'desc' : 'desc'
+        order: 'desc'
       });
-      setReviews(data.data);
+      setStores(data.data);
       setMeta(data.pagination);
     } catch (err) {
       console.error(err);
-      setError('加载点评失败，请稍后再试');
+      setError('加载店铺失败，请稍后再试');
     } finally {
       setLoading(false);
     }
@@ -44,46 +42,26 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, sort, query]);
 
-  const handleDelete = (review: Review) => {
-    Modal.confirm({
-      title: `删除点评：${review.store?.name}`,
-      content: '删除后不可恢复，确认继续吗？',
-      okText: '确认删除',
-      okButtonProps: { danger: true },
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await adminDeleteReview(review.id);
-          message.success('已删除该点评');
-          await load();
-        } catch (err) {
-          console.error(err);
-          message.error('删除失败，请稍后再试');
-        }
-      }
-    });
-  };
-
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Title level={3}>最新点评</Title>
+          <Title level={3}>发现店铺</Title>
         </Col>
         <Col>
           <Space>
             <Input.Search
               allowClear
-              placeholder="搜索菜品或地点"
+              placeholder="搜索店铺名称或地址"
               onSearch={(value) => {
                 setPage(1);
                 setQuery(value);
               }}
               onChange={(e) => {
-                setPage(1);
-                setQuery(e.target.value);
+                if (!e.target.value) {
+                  setQuery('');
+                }
               }}
-              value={query}
               style={{ width: 260 }}
             />
             <Select
@@ -93,24 +71,29 @@ const Home = () => {
                 setPage(1);
               }}
               options={[
-                { value: 'created_at', label: '最新发布' },
-                { value: 'rating', label: '评分最高' }
+                { value: 'created_at', label: '最新入驻' },
+                { value: 'average_rating', label: '评分最高' },
+                { value: 'total_reviews', label: '最热门' }
               ]}
+              style={{ width: 120 }}
             />
+            <Link to="/submit-review">
+              <Button type="primary">推荐新店</Button>
+            </Link>
           </Space>
         </Col>
       </Row>
 
       {loading ? (
-        <Spin style={{ width: '100%' }} />
+        <div style={{ textAlign: 'center', padding: '50px 0' }}><Spin size="large" /></div>
       ) : error ? (
         <Card><Text type="danger">{error}</Text></Card>
-      ) : reviews.length === 0 ? (
-        <Empty description="目前还没有符合条件的点评" />
+      ) : stores.length === 0 ? (
+        <Empty description="没有找到符合条件的店铺，快来推荐一家吧！" />
       ) : (
         <List
-          grid={{ gutter: 16, column: 2 }}
-          dataSource={reviews}
+          grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 4 }}
+          dataSource={stores}
           pagination={meta ? {
             current: meta.page,
             pageSize: meta.page_size,
@@ -118,33 +101,30 @@ const Home = () => {
             onChange: (p, size) => {
               setPage(p);
               setPageSize(size);
-            }
+            },
+            showSizeChanger: true
           } : false}
-          renderItem={(review) => (
-            <List.Item key={review.id}>
-              <Card
-                title={review.store?.name}
-                extra={<Text strong>{review.rating.toFixed(1)} 分</Text>}
-                hoverable
-              >
-                <Paragraph ellipsis={{ rows: 3 }}>{review.content || '暂无详细点评'}</Paragraph>
-                <Paragraph type="secondary">地址：{review.store?.address}</Paragraph>
-                {review.images && review.images.length > 0 && (
-                  <img
-                    src={review.images[0].url}
-                    alt={review.store?.name}
-                    style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 8 }}
-                  />
-                )}
-                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Link to={`/reviews/${review.id}`}>查看详情</Link>
-                  {user?.role === 'admin' && (
-                    <Button type="link" danger onClick={() => handleDelete(review)}>
-                      删除
-                    </Button>
-                  )}
-                </div>
-              </Card>
+          renderItem={(store) => (
+            <List.Item key={store.id}>
+              <Link to={`/stores/${store.id}`}>
+                <Card
+                  title={store.name}
+                  hoverable
+                  cover={
+                    <img
+                      alt={store.name}
+                      src={`https://via.placeholder.com/400x200.png?text=${encodeURIComponent(store.name)}`}
+                      style={{ height: 150, objectFit: 'cover' }}
+                    />
+                  }
+                >
+                  <Paragraph ellipsis={{ rows: 2 }}>{store.address}</Paragraph>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Rate allowHalf disabled value={store.average_rating} style={{ fontSize: 16 }} />
+                    <Text type="secondary">{store.total_reviews} 条评价</Text>
+                  </div>
+                </Card>
+              </Link>
             </List.Item>
           )}
         />

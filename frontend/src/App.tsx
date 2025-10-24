@@ -1,13 +1,14 @@
 import { Route, Routes } from 'react-router-dom';
 import AppHeader from './components/Layout/Header';
 import ProtectedRoute from './components/ProtectedRoute';
-import NewHome from './pages/NewHome';
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import SubmitStoreReview from './pages/SubmitStoreReview';
 import MyReviews from './pages/MyReviews';
 import MyProfile from './pages/MyProfile';
 import ReviewDetail from './pages/ReviewDetail';
+import StoreDetail from './pages/StoreDetail';
 import AdminPending from './pages/AdminPending';
 import NotFound from './pages/NotFound';
 import './styles/global.css';
@@ -21,13 +22,14 @@ const App = () => {
       <AppHeader />
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<NewHome />} />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/reviews/:id" element={<ReviewDetail />} />
+          <Route path="/stores/:id" element={<StoreDetail />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/submit-store" element={<SubmitStoreReview />} />
+            <Route path="/submit-review" element={<SubmitStoreReview />} />
             <Route path="/my" element={<MyReviews />} />
             <Route path="/my-profile" element={<MyProfile />} />
           </Route>

@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { message } from 'antd';
 import type {
   AuthResponse,
   PaginatedResponse,
@@ -62,6 +63,11 @@ api.interceptors.response.use(
         refreshToken = result.refresh_token;
         setAuthorizationHeader(originalRequest, accessToken);
         return api(originalRequest);
+      } else {
+        // 刷新 token 失败，清除所有认证信息并跳转到登录页
+        clearAuthTokens();
+        message.error('您的会话已过期，请重新登录。');
+        window.location.href = '/login';
       }
     }
 
@@ -212,8 +218,8 @@ export const updateReviewStatus = async (id: string, status: 'approved' | 'rejec
   return data;
 };
 
-export const adminDeleteReview = async (id: string): Promise<void> => {
-  await api.delete(`/admin/reviews/${id}`);
+export const adminDeleteReview = async (storeId: string, reviewId: string): Promise<void> => {
+  await api.delete(`/admin/stores/${storeId}/reviews/${reviewId}`);
 };
 
 export const fetchPendingStores = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Store>> => {

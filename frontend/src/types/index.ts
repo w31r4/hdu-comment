@@ -1,5 +1,4 @@
 export interface User {
-  id: string;
   email: string;
   display_name: string;
   role: 'user' | 'admin';
@@ -38,7 +37,6 @@ export interface Review {
   images?: Image[];
   created_at: string;
   updated_at: string;
-  store_id?: string;
   store?: Store;
   status?: 'approved' | 'pending' | 'rejected';
   rejection_reason?: string;
