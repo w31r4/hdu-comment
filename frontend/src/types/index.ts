@@ -4,6 +4,7 @@ export interface User {
   display_name: string;
   role: 'user' | 'admin';
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface Store {
@@ -13,36 +14,34 @@ export interface Store {
   phone?: string;
   category?: string;
   description?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  rejection_reason?: string;
   average_rating: number;
   total_reviews: number;
-  created_by: string;
   created_at: string;
-  updated_at: string;
 }
 
-export interface ReviewImage {
+export interface Image {
   id: string;
-  review_id: string;
-  storage_key: string;
   url: string;
-  created_at: string;
+}
+
+export interface Author {
+  id: string;
+  display_name: string;
 }
 
 export interface Review {
   id: string;
-  store_id: string;
-  store?: Store;
+  author: Author;
+  title: string;
   content: string;
   rating: number;
-  status: 'pending' | 'approved' | 'rejected';
-  rejection_reason?: string;
-  author_id: string;
-  author?: User;
-  images?: ReviewImage[];
+  images?: Image[];
   created_at: string;
   updated_at: string;
+  store_id?: string;
+  store?: Store;
+  status?: 'approved' | 'pending' | 'rejected';
+  rejection_reason?: string;
 }
 
 export interface AuthResponse {
@@ -61,4 +60,43 @@ export interface PaginationMeta {
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: PaginationMeta;
+}
+
+// --- Request Payloads ---
+
+export interface CreateStoreRequest {
+  name: string;
+  address: string;
+  phone?: string;
+  category?: string;
+  description?: string;
+}
+
+export interface CreateReviewRequest {
+  title: string;
+  content: string;
+  rating: number;
+}
+
+export interface UpdateReviewRequest {
+  title?: string;
+  content?: string;
+  rating?: number;
+}
+
+export interface StoreInfoForReview {
+  name: string;
+  address: string;
+}
+
+export interface CreateReviewForNewStoreRequest extends CreateReviewRequest {
+  store: StoreInfoForReview;
+}
+
+// --- Special API Responses ---
+
+export interface AutoCreateReviewResponse {
+  store: Store;
+  review: Review;
+  is_new_store: boolean;
 }

@@ -1,5 +1,16 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import type { AuthResponse, PaginatedResponse, Review, User } from '../types';
+import type {
+  AuthResponse,
+  PaginatedResponse,
+  Review,
+  User,
+  Store,
+  CreateStoreRequest,
+  CreateReviewRequest,
+  UpdateReviewRequest,
+  CreateReviewForNewStoreRequest,
+  AutoCreateReviewResponse
+} from '../types';
 
 const api = axios.create({
   baseURL: '/api/v1'
@@ -74,13 +85,19 @@ export const setRefreshExecutor = (executor: (() => Promise<AuthResponse | null>
 
 export const getRefreshToken = () => refreshToken;
 
-export interface ReviewQueryParams {
+// --- Generic Query Params ---
+
+export interface ListQueryParams {
   page?: number;
   page_size?: number;
   query?: string;
-  sort?: 'created_at' | 'rating';
+  sort?: string; // e.g., 'created_at', '-rating'
   order?: 'asc' | 'desc';
+  category?: string;
+  status?: string;
 }
+
+// --- Auth API ---
 
 export const register = async (email: string, password: string, displayName: string): Promise<AuthResponse> => {
   const { data } = await api.post<AuthResponse>('/auth/register', {
@@ -105,34 +122,74 @@ export const logout = async (token: string): Promise<void> => {
   await api.post('/auth/logout', { refresh_token: token });
 };
 
+// --- User API ---
+
 export const fetchMe = async (): Promise<User> => {
   const { data } = await api.get<User>('/users/me');
   return data;
 };
 
-export const fetchReviews = async (params: ReviewQueryParams = {}): Promise<PaginatedResponse<Review>> => {
+export const fetchMyReviews = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Review>> => {
+  const { data } = await api.get<PaginatedResponse<Review>>('/users/me/reviews', { params });
+  return data;
+};
+
+// --- Store API ---
+
+export const searchStores = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Store>> => {
+  const { data } = await api.get<PaginatedResponse<Store>>('/stores', { params });
+  return data;
+};
+
+export const getStore = async (storeId: string): Promise<Store> => {
+  const { data } = await api.get<Store>(`/stores/${storeId}`);
+  return data;
+};
+
+export const createStore = async (payload: CreateStoreRequest): Promise<Store> => {
+  const { data } = await api.post<Store>('/stores', payload);
+  return data;
+};
+
+// --- Review API ---
+
+export const fetchReviews = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Review>> => {
   const { data } = await api.get<PaginatedResponse<Review>>('/reviews', { params });
   return data;
 };
 
-export const fetchMyReviews = async (params: ReviewQueryParams = {}): Promise<PaginatedResponse<Review>> => {
-  const { data } = await api.get<PaginatedResponse<Review>>('/reviews/me', { params });
-  return data;
-};
-
-export const submitReview = async (payload: {
-  title: string;
-  address: string;
-  description: string;
-  rating: number;
-}): Promise<Review> => {
-  const { data } = await api.post<Review>('/reviews', payload);
+export const getStoreReviews = async (
+  storeId: string,
+  params: ListQueryParams = {}
+): Promise<PaginatedResponse<Review>> => {
+  const { data } = await api.get<PaginatedResponse<Review>>(`/stores/${storeId}/reviews`, { params });
   return data;
 };
 
 export const fetchReviewDetail = async (id: string): Promise<Review> => {
   const { data } = await api.get<Review>(`/reviews/${id}`);
   return data;
+};
+
+export const createReviewForNewStore = async (
+  payload: CreateReviewForNewStoreRequest
+): Promise<AutoCreateReviewResponse> => {
+  const { data } = await api.post<AutoCreateReviewResponse>('/reviews', payload);
+  return data;
+};
+
+export const createReviewForStore = async (storeId: string, payload: CreateReviewRequest): Promise<Review> => {
+  const { data } = await api.post<Review>(`/stores/${storeId}/reviews`, payload);
+  return data;
+};
+
+export const updateReview = async (storeId: string, reviewId: string, payload: UpdateReviewRequest): Promise<Review> => {
+  const { data } = await api.patch<Review>(`/stores/${storeId}/reviews/${reviewId}`, payload);
+  return data;
+};
+
+export const deleteReview = async (storeId: string, reviewId: string): Promise<void> => {
+  await api.delete(`/stores/${storeId}/reviews/${reviewId}`);
 };
 
 export const uploadReviewImage = async (id: string, file: File): Promise<void> => {
@@ -143,21 +200,37 @@ export const uploadReviewImage = async (id: string, file: File): Promise<void> =
   });
 };
 
-export const fetchPendingReviews = async (params: ReviewQueryParams = {}): Promise<PaginatedResponse<Review>> => {
+// --- Admin API ---
+
+export const fetchPendingReviews = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Review>> => {
   const { data } = await api.get<PaginatedResponse<Review>>('/admin/reviews/pending', { params });
   return data;
 };
 
-export const approveReview = async (id: string): Promise<Review> => {
-  const { data } = await api.put<Review>(`/admin/reviews/${id}/approve`);
+export const updateReviewStatus = async (id: string, status: 'approved' | 'rejected', reason?: string): Promise<Review> => {
+  const { data } = await api.put<Review>(`/admin/reviews/${id}/status`, { status, reason });
   return data;
 };
 
-export const rejectReview = async (id: string, reason: string): Promise<Review> => {
-  const { data } = await api.put<Review>(`/admin/reviews/${id}/reject`, { reason });
-  return data;
-};
-
-export const deleteReview = async (id: string): Promise<void> => {
+export const adminDeleteReview = async (id: string): Promise<void> => {
   await api.delete(`/admin/reviews/${id}`);
+};
+
+export const fetchPendingStores = async (params: ListQueryParams = {}): Promise<PaginatedResponse<Store>> => {
+  const { data } = await api.get<PaginatedResponse<Store>>('/admin/stores/pending', { params });
+  return data;
+};
+
+export const adminCreateStore = async (payload: CreateStoreRequest): Promise<Store> => {
+  const { data } = await api.post<Store>('/admin/stores', payload);
+  return data;
+};
+
+export const updateStoreStatus = async (id: string, status: 'approved' | 'rejected', reason?: string): Promise<Store> => {
+  const { data } = await api.put<Store>(`/admin/stores/${id}/status`, { status, reason });
+  return data;
+};
+
+export const adminDeleteStore = async (id: string): Promise<void> => {
+  await api.delete(`/admin/stores/${id}`);
 };

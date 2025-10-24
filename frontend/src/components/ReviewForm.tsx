@@ -7,7 +7,7 @@ const { TextArea } = Input;
 
 interface ReviewFormProps {
   existingReview?: Review | null;
-  onSubmit: (data: { content: string; rating: number }) => void;
+  onSubmit: (data: { title: string; content: string; rating: number }) => void;
   onCancel?: () => void;
 }
 
@@ -15,14 +15,10 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: { title: string; content: string; rating: number }) => {
     setSubmitting(true);
-    
     try {
-      await onSubmit({
-        content: values.content,
-        rating: values.rating
-      });
+      await onSubmit(values);
     } catch (error) {
       console.error('提交评价失败:', error);
     } finally {
@@ -30,12 +26,17 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
     }
   };
 
-  const initialValues = existingReview ? {
-    content: existingReview.content,
-    rating: existingReview.rating
-  } : {
-    rating: 3
-  };
+  const initialValues = existingReview
+    ? {
+        title: existingReview.title,
+        content: existingReview.content,
+        rating: existingReview.rating
+      }
+    : {
+        rating: 3,
+        title: '',
+        content: ''
+      };
 
   return (
     <Card className="review-form-card">
@@ -54,6 +55,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ existingReview, onSubmit, onCan
           </div>
         )}
         
+        
+        <Form.Item
+          label="标题"
+          name="title"
+          rules={[{ required: true, message: '请输入一个简洁的标题' }]}
+        >
+          <Input placeholder="例如：惊艳的麻婆豆腐！" maxLength={50} showCount />
+        </Form.Item>
         
         <Form.Item
           label="评价内容"

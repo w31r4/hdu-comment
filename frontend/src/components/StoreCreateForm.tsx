@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Form, Input, Button, Select, Rate, message, Typography, Divider } from 'antd';
 import type { Store } from '../types';
-import { createStoreWithReview } from '../api/store_client';
+import { createReviewForNewStore } from '../api/client';
 import { useAuthContext } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
@@ -31,17 +31,19 @@ const StoreCreateForm: React.FC<StoreCreateFormProps> = ({ onSuccess, onCancel }
     
     try {
       const input = {
-        store_name: values.store_name,
-        store_address: values.store_address,
-        store_phone: values.store_phone || '',
-        store_category: values.store_category || '',
-        store_description: values.store_description || '',
-        review_title: values.review_title,
-        review_content: values.review_content,
+        store: {
+          name: values.store_name,
+          address: values.store_address,
+          phone: values.store_phone || '',
+          category: values.store_category || '',
+          description: values.store_description || '',
+        },
+        title: values.review_title,
+        content: values.review_content,
         rating: values.rating
       };
 
-      const result = await createStoreWithReview(input, token);
+      const result = await createReviewForNewStore(input);
       
       message.success('店铺和评价提交成功，等待管理员审核');
       

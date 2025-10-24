@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input, List, Card, Button, Spin, Empty, Rate, Tag } from 'antd';
 import { SearchOutlined, ShopOutlined, PhoneOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import type { Store } from '../types';
-import { searchStores } from '../api/store_client';
+import { searchStores } from '../api/client';
 
 const { Search } = Input;
 

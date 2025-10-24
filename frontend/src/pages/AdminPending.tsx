@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Descriptions, Form, Image, Input, Modal, Space, Table, Tag, Typography, message } from 'antd';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
-import { approveReview, deleteReview, fetchPendingReviews, fetchReviewDetail, rejectReview } from '../api/client';
+import { updateReviewStatus, adminDeleteReview, fetchPendingReviews, fetchReviewDetail } from '../api/client';
 import type { Review } from '../types';
 
 const AdminPending = () => {
@@ -43,7 +43,7 @@ const AdminPending = () => {
 
   const handleApprove = async (review: Review) => {
     try {
-      await approveReview(review.id);
+      await updateReviewStatus(review.id, 'approved');
       message.success('已通过审核');
       load(pagination.current, pagination.pageSize);
     } catch (err) {
@@ -75,14 +75,14 @@ const AdminPending = () => {
 
   const handleDelete = (review: Review) => {
     Modal.confirm({
-      title: `删除点评：${review.store?.name}`,
+      title: `删除点评：${review.title}`,
       content: '删除后不可恢复，确认继续吗？',
       okText: '确认删除',
       okButtonProps: { danger: true },
       cancelText: '取消',
       onOk: async () => {
         try {
-          await deleteReview(review.id);
+          await adminDeleteReview(review.id);
           message.success('已删除该点评');
           load(pagination.current, pagination.pageSize);
         } catch (err) {
@@ -97,7 +97,7 @@ const AdminPending = () => {
     try {
       const values = await form.validateFields();
       if (!selectedReview) return;
-      await rejectReview(selectedReview.id, values.reason);
+      await updateReviewStatus(selectedReview.id, 'rejected', values.reason);
       message.success('已驳回该点评');
       setRejectModalOpen(false);
       load(pagination.current, pagination.pageSize);
@@ -111,14 +111,9 @@ const AdminPending = () => {
 
   const columns: ColumnsType<Review> = [
     {
-      title: '菜品/店铺',
-      dataIndex: ['store', 'name'],
-      key: 'store_name'
-    },
-    {
-      title: '地址',
-      dataIndex: ['store', 'address'],
-      key: 'store_address'
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
     },
     {
       title: '评分',
@@ -184,7 +179,7 @@ const AdminPending = () => {
 
       <Modal
         open={rejectModalOpen}
-        title={`驳回点评：${selectedReview?.store?.name ?? ''}`}
+        title={`驳回点评：${selectedReview?.title ?? ''}`}
         onCancel={() => setRejectModalOpen(false)}
         onOk={handleReject}
         okText="确认驳回"
@@ -202,7 +197,7 @@ const AdminPending = () => {
 
       <Modal
         open={detailOpen}
-        title={detailReview?.store?.name ?? '点评详情'}
+        title={detailReview?.title ?? '点评详情'}
         onCancel={() => {
           setDetailOpen(false);
           setDetailReview(null);
@@ -217,6 +212,7 @@ const AdminPending = () => {
         ) : (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Descriptions bordered column={1}>
+              <Descriptions.Item label="店铺">{detailReview.store?.name}</Descriptions.Item>
               <Descriptions.Item label="地址">{detailReview.store?.address}</Descriptions.Item>
               <Descriptions.Item label="评分">{detailReview.rating.toFixed(1)} 分</Descriptions.Item>
               <Descriptions.Item label="提交时间">

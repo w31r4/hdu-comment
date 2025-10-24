@@ -13,15 +13,17 @@ const { Title, Paragraph, Text } = Typography;
 
 interface ReviewCardProps {
     review: Review;
+    store?: { name: string; address: string };
+    status?: 'approved' | 'pending' | 'rejected';
     onDelete?: (review: Review) => void;
     showStatus?: boolean;
 }
 
-const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) => {
+const ReviewCard = ({ review, store, status, onDelete, showStatus = false }: ReviewCardProps) => {
     const { user } = useAuth();
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
+    const getStatusColor = (s: string) => {
+        switch (s) {
             case 'approved': return 'success';
             case 'pending': return 'warning';
             case 'rejected': return 'error';
@@ -29,12 +31,12 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
         }
     };
 
-    const getStatusText = (status: string) => {
-        switch (status) {
+    const getStatusText = (s: string) => {
+        switch (s) {
             case 'approved': return '已发布';
             case 'pending': return '待审核';
             case 'rejected': return '已拒绝';
-            default: return status;
+            default: return s;
         }
     };
 
@@ -46,16 +48,16 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
                 review.images && review.images.length > 0 && (
                     <div className="review-card-image-container">
                         <img
-                            alt={review.store?.name}
+                            alt={store?.name}
                             src={review.images[0].url}
                             className="review-card-image"
                         />
-                        {showStatus && (
+                        {showStatus && status && (
                             <Tag
-                                color={getStatusColor(review.status)}
+                                color={getStatusColor(status)}
                                 className="review-status-tag"
                             >
-                                {getStatusText(review.status)}
+                                {getStatusText(status)}
                             </Tag>
                         )}
                     </div>
@@ -81,7 +83,7 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
         >
             <div className="review-card-content">
                 <Title level={4} className="review-title" ellipsis={{ rows: 1 }}>
-                    {review.store?.name}
+                    {review.title}
                 </Title>
 
                 <Space className="review-meta" size="small">
@@ -103,11 +105,11 @@ const ReviewCard = ({ review, onDelete, showStatus = false }: ReviewCardProps) =
                 </Paragraph>
 
                 <Space direction="vertical" size="small" className="review-info">
-                    {review.store && (
+                    {store && (
                         <Space className="info-item">
                             <EnvironmentOutlined className="info-icon" />
                             <Text type="secondary" className="info-text">
-                                {review.store.name} - {review.store.address}
+                                {store.name} - {store.address}
                             </Text>
                         </Space>
                     )}

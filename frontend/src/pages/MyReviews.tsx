@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Card, Table, Tag, Typography } from 'antd';
+import { Card, Table, Tag, Typography, Button } from 'antd';
+import { Link } from 'react-router-dom';
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
 import { fetchMyReviews } from '../api/client';
 import type { Review } from '../types';
 
-const statusMap: Record<Review['status'], { text: string; color: string }> = {
+const statusMap: Record<string, { text: string; color: string }> = {
   pending: { text: '待审核', color: 'orange' },
   approved: { text: '已通过', color: 'green' },
   rejected: { text: '已驳回', color: 'red' }
@@ -32,15 +33,20 @@ const MyReviews = () => {
 
   const columns: ColumnsType<Review> = [
     {
-      title: '菜品/店铺',
-      dataIndex: ['store', 'name'],
-      key: 'store_name'
+      title: '标题',
+      dataIndex: 'title',
+      key: 'title',
+      render: (text, record) => <Link to={`/reviews/${record.id}`}>{text}</Link>
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: Review['status']) => <Tag color={statusMap[status].color}>{statusMap[status].text}</Tag>
+      render: (status: string) => (
+        <Tag color={statusMap[status]?.color || 'default'}>
+          {statusMap[status]?.text || status}
+        </Tag>
+      )
     },
     {
       title: '评分',

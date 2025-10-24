@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Col, Empty, Input, List, Modal, Row, Select, Space, Spin, Typography, message } from 'antd';
 import { Link } from 'react-router-dom';
-import { deleteReview, fetchReviews } from '../api/client';
+import { adminDeleteReview, fetchReviews } from '../api/client';
 import type { PaginatedResponse, Review } from '../types';
 import { useAuth } from '../hooks/useAuth';
 
@@ -53,7 +53,7 @@ const Home = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          await deleteReview(review.id);
+          await adminDeleteReview(review.id);
           message.success('已删除该点评');
           await load();
         } catch (err) {

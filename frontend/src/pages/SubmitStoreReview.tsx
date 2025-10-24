@@ -6,13 +6,19 @@ import StoreCreateForm from '../components/StoreCreateForm';
 import ReviewForm from '../components/ReviewForm';
 import { Rate } from 'antd';
 import { useAuth } from '../hooks/useAuth';
-import type { Store } from '../types';
-import { submitStoreReview, updateStoreReview, getMyStoreReview } from '../api/store_client';
+import type { Store, Review } from '../types';
+import {
+  createReviewForStore,
+  updateReview,
+  createReviewForNewStore,
+  fetchMyReviews
+} from '../api/client';
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
 
 interface ReviewFormData {
+  title: string;
   content: string;
   rating: number;
 }
@@ -20,15 +26,15 @@ interface ReviewFormData {
 const SubmitStoreReview = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [existingReview, setExistingReview] = useState<any>(null);
+  const [existingReview, setExistingReview] = useState<Review | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   const steps = [
     {
-      title: '选择店铺',
+      title: '选择或创建店铺',
       icon: <ShopOutlined />,
-      content: 'SearchStore'
+      content: 'SearchOrCreateStore'
     },
     {
       title: existingReview ? '更新评价' : '提交评价',
@@ -44,93 +50,99 @@ const SubmitStoreReview = () => {
 
   const handleStoreSelect = async (store: Store) => {
     setSelectedStore(store);
-    
     // 检查用户是否已有该店铺的评价
-    if (token) {
+    if (user) {
       try {
-        const review = await getMyStoreReview(store.id, token);
-        setExistingReview(review);
+        const response = await fetchMyReviews({ query: `store_id:${store.id}` });
+        if (response.data.length > 0) {
+          setExistingReview(response.data[0]);
+        } else {
+          setExistingReview(null);
+        }
       } catch (error) {
         console.error('获取用户评价失败：', error);
+        setExistingReview(null);
       }
     }
-    
     setCurrentStep(1);
   };
 
   const handleCreateNewStore = () => {
     setShowCreateForm(true);
-  };
-
-  const handleStoreCreated = (store: Store, review: any) => {
-    setSelectedStore(store);
-    setExistingReview(review);
-    setShowCreateForm(false);
-    setCurrentStep(1);
-    message.success('店铺和评价创建成功！');
+    setSelectedStore(null);
+    setExistingReview(null);
+    setCurrentStep(1); // 直接进入第二步，在第二步中显示创建表单
   };
 
   const handleReviewSubmit = async (formData: ReviewFormData) => {
-    if (!token || !selectedStore) {
-      message.error('请先登录并选择店铺');
+    if (!user) {
+      message.error('请先登录');
       return;
     }
 
     try {
-      if (existingReview) {
-        // 更新现有评价
-        const updatedReview = await updateStoreReview(existingReview.id, { content: formData.content, rating: formData.rating }, token);
-        setExistingReview(updatedReview);
-        message.success('评价更新成功，等待管理员审核');
+      if (selectedStore) {
+        // 为现有店铺提交或更新评价
+        if (existingReview) {
+          const updatedReview = await updateReview(selectedStore.id, existingReview.id, formData);
+          setExistingReview(updatedReview);
+          message.success('评价更新成功，等待管理员审核');
+        } else {
+          const newReview = await createReviewForStore(selectedStore.id, formData);
+          setExistingReview(newReview);
+          message.success('评价提交成功，等待管理员审核');
+        }
       } else {
-        // 提交新评价
-        const newReview = await submitStoreReview({
-          store_id: selectedStore.id,
-          content: formData.content,
-          rating: formData.rating
-        }, token);
-        setExistingReview(newReview);
-        message.success('评价提交成功，等待管理员审核');
+        // 创建新店铺并提交评价
+        // 注意：这里需要 StoreCreateForm 和 ReviewForm 的数据
+        // 我们将在 renderStepContent 中处理这个逻辑
+        message.error('逻辑错误：没有选择店铺，无法提交');
+        return;
       }
-      
       setCurrentStep(2);
     } catch (error: any) {
       if (error.response?.status === 409) {
-        message.error('您已经对该店铺有过评价，请更新现有评价');
+        message.error('您已经对该店铺有过评价，或请求正在处理中');
       } else {
-        message.error('提交失败，请重试');
+        message.error(error.response?.data?.detail || '提交失败，请重试');
       }
       console.error('提交评价失败：', error);
     }
   };
 
   const renderStepContent = () => {
-    if (showCreateForm) {
-      return (
-        <StoreCreateForm
-          onSuccess={handleStoreCreated}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      );
-    }
-
     switch (currentStep) {
       case 0:
         return (
           <div className="step-content">
-            <StoreSearch
-              onStoreSelect={handleStoreSelect}
-            />
+            <StoreSearch onStoreSelect={handleStoreSelect} />
             <div className="create-store-option">
               <Text type="secondary">找不到您要的店铺？</Text>
               <Button type="link" onClick={handleCreateNewStore}>
-                创建新店铺
+                创建新店铺并评价
               </Button>
             </div>
           </div>
         );
-      
+
       case 1:
+        if (showCreateForm) {
+          return (
+            <StoreCreateForm
+              onCancel={() => {
+                setShowCreateForm(false);
+                setCurrentStep(0);
+              }}
+              onSuccess={(store, review) => {
+                setSelectedStore(store);
+                setExistingReview(review);
+                setShowCreateForm(false);
+                setCurrentStep(2);
+                message.success('新店铺和评价已成功提交！');
+              }}
+            />
+          );
+        }
         return (
           <div className="step-content">
             {selectedStore && (
@@ -140,12 +152,13 @@ const SubmitStoreReview = () => {
                 {selectedStore.average_rating > 0 && (
                   <div className="store-rating">
                     <Rate disabled value={selectedStore.average_rating} />
-                    <Text>{selectedStore.average_rating.toFixed(1)} ({selectedStore.total_reviews}条评价)</Text>
+                    <Text>
+                      {selectedStore.average_rating.toFixed(1)} ({selectedStore.total_reviews}条评价)
+                    </Text>
                   </div>
                 )}
               </Card>
             )}
-            
             <ReviewForm
               existingReview={existingReview}
               onSubmit={handleReviewSubmit}
@@ -153,7 +166,7 @@ const SubmitStoreReview = () => {
             />
           </div>
         );
-      
+
       case 2:
         return (
           <div className="step-content complete-step">

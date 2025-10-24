@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Drawer, Menu, Typography, Avatar, Dropdown } from 'antd';
 import {
@@ -24,51 +24,49 @@ const AppHeader = () => {
     const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    const menuItems: MenuProps['items'] = [
-        {
-            key: '/',
-            label: <Link to="/">首页</Link>,
-            icon: <HomeOutlined />
-        },
-        {
-            key: '/popular',
-            label: <Link to="/?sort=rating">热门点评</Link>,
-            icon: <StarOutlined />
-        },
-        {
-            key: '/latest',
-            label: <Link to="/?sort=created_at">最新发布</Link>,
-            icon: <CalendarOutlined />
-        }
-    ];
-
-    if (user) {
-        menuItems.push(
+    const menuItems = useMemo(() => {
+        const items: MenuProps['items'] = [
             {
-                key: '/submit-store',
-                label: <Link to="/submit-store">店铺评价</Link>,
-                icon: <ShopOutlined />
+                key: '/',
+                label: <Link to="/">首页</Link>,
+                icon: <HomeOutlined />
             },
             {
-                key: '/submit',
-                label: <Link to="/submit">提交点评</Link>,
-                icon: <PlusOutlined />
+                key: '/popular',
+                label: <Link to="/?sort=rating">热门点评</Link>,
+                icon: <StarOutlined />
             },
             {
-                key: '/my',
-                label: <Link to="/my">我的点评</Link>,
-                icon: <FileTextOutlined />
+                key: '/latest',
+                label: <Link to="/?sort=created_at">最新发布</Link>,
+                icon: <CalendarOutlined />
             }
-        );
-    }
+        ];
 
-    if (user?.role === 'admin') {
-        menuItems.push({
-            key: '/admin/reviews',
-            label: <Link to="/admin/reviews">审核中心</Link>,
-            icon: <AuditOutlined />
-        });
-    }
+        if (user) {
+            items.push(
+                {
+                    key: '/submit-store',
+                    label: <Link to="/submit-store">店铺评价</Link>,
+                    icon: <ShopOutlined />
+                },
+                {
+                    key: '/my',
+                    label: <Link to="/my">我的点评</Link>,
+                    icon: <FileTextOutlined />
+                }
+            );
+        }
+
+        if (user?.role === 'admin') {
+            items.push({
+                key: '/admin/reviews',
+                label: <Link to="/admin/reviews">审核中心</Link>,
+                icon: <AuditOutlined />
+            });
+        }
+        return items;
+    }, [user]);
 
     const selectedKey = location.pathname.startsWith('/admin')
         ? '/admin/reviews'
@@ -80,29 +78,6 @@ const AppHeader = () => {
                     ? '/my'
                     : '/';
 
-    const userMenuItems: MenuProps['items'] = [
-        {
-            key: 'user-info',
-            label: (
-                <div style={{ padding: '8px 0' }}>
-                    <Text strong>{user?.display_name}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                        {user?.email}
-                    </Text>
-                </div>
-            ),
-            disabled: true,
-        },
-        { type: 'divider' },
-        {
-            key: 'logout',
-            label: '退出登录',
-            icon: <LogoutOutlined />,
-            onClick: () => logout(),
-        },
-    ];
-
     const MobileMenu = () => (
         <Drawer
             title="菜单"
@@ -111,7 +86,7 @@ const AppHeader = () => {
             onClose={() => setMobileMenuOpen(false)}
             open={mobileMenuOpen}
             width={280}
-            bodyStyle={{ padding: 0 }}
+            styles={{ body: { padding: 0 } }}
         >
             <div style={{ padding: 16 }}>
                 <Menu
@@ -182,22 +157,14 @@ const AppHeader = () => {
                     {/* 用户区域 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         {user ? (
-                            <Dropdown
-                                menu={{ items: userMenuItems }}
-                                placement="bottomRight"
-                                trigger={['click']}
-                            >
-                                <div className="user-dropdown-trigger">
-                                    <Avatar
-                                        size={32}
-                                        icon={<UserOutlined />}
-                                        style={{ backgroundColor: '#2563eb' }}
-                                    />
-                                    <Text className="desktop-only">
-                                        {user.display_name}
-                                    </Text>
-                                </div>
-                            </Dropdown>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Avatar size={32} icon={<UserOutlined />} style={{ backgroundColor: '#2563eb' }} />
+                                <Text>{user.display_name}</Text>
+                                <Link to="/my-profile">
+                                    <Button type="link">个人主页</Button>
+                                </Link>
+                                <Button type="link" onClick={logout}>退出登录</Button>
+                            </div>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                 <Link to="/login">
